@@ -1,0 +1,229 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <defs>
+    <style>
+      @keyframes alert-pulse {
+        0%, 100% {
+          opacity: 1;
+          filter: drop-shadow(0 0 10px rgba(255,71,87,0.8));
+        }
+        50% {
+          opacity: 0.7;
+          filter: drop-shadow(0 0 30px rgba(255,71,87,1));
+        }
+      }
+
+      @keyframes siren-rotate {
+        0% { transform: rotate(-10deg); }
+        50% { transform: rotate(10deg); }
+        100% { transform: rotate(-10deg); }
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+      }
+
+      @keyframes modal-appear {
+        0% {
+          opacity: 0;
+          transform: scale(0.8) translateY(50px);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      @keyframes progress-fill {
+        0% { width: 0%; }
+        100% { width: 100%; }
+      }
+
+      @keyframes blink-fast {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+
+      .alert-container {
+        animation: alert-pulse 0.8s ease-in-out infinite;
+      }
+
+      .siren {
+        animation: siren-rotate 0.3s ease-in-out infinite;
+        transform-origin: bottom center;
+      }
+
+      .shake-effect {
+        animation: shake 0.1s ease-in-out infinite;
+      }
+
+      .modal {
+        animation: modal-appear 0.4s ease-out;
+      }
+
+      .progress-bar {
+        animation: progress-fill 2s ease-out forwards;
+      }
+
+      .blink-fast {
+        animation: blink-fast 0.5s ease-in-out infinite;
+      }
+    </style>
+
+    <linearGradient id="alertBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2d0a0a"/>
+      <stop offset="100%" stop-color="#4a0a0a"/>
+    </linearGradient>
+
+    <linearGradient id="dangerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#ff6b81"/>
+    </linearGradient>
+
+    <linearGradient id="btnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff6b81"/>
+      <stop offset="100%" stop-color="#ff4757"/>
+    </linearGradient>
+
+    <filter id="intenseGlow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <radialGradient id="sirenGrad">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="50%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#8b0000"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Darkened Background Overlay -->
+  <rect width="800" height="500" fill="rgba(0,0,0,0.7)"/>
+
+  <!-- Background with alert pattern -->
+  <rect width="800" height="500" fill="url(#alertBgGrad)" class="shake-effect"/>
+
+  <!-- Rotating Sirens -->
+  <g transform="translate(100, 60)">
+    <g class="siren">
+      <path d="M-25,0 L25,0 L15,-40 L-15,-40 Z" fill="url(#sirenGrad)" filter="url(#intenseGlow)"/>
+      <circle cx="0" cy="-35" r="12" fill="#ff4757" class="blink-fast"/>
+    </g>
+    <circle cx="0" cy="-50" r="30" fill="none" stroke="#ff4757" stroke-width="2" stroke-dasharray="5,5" opacity="0.5">
+      <animate attributeName="r" values="20;40" dur="0.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0" dur="0.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <g transform="translate(700, 60)">
+    <g class="siren">
+      <path d="M-25,0 L25,0 L15,-40 L-15,-40 Z" fill="url(#sirenGrad)" filter="url(#intenseGlow)"/>
+      <circle cx="0" cy="-35" r="12" fill="#ff4757" class="blink-fast"/>
+    </g>
+    <circle cx="0" cy="-50" r="30" fill="none" stroke="#ff4757" stroke-width="2" stroke-dasharray="5,5" opacity="0.5">
+      <animate attributeName="r" values="20;40" dur="0.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0" dur="0.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="800" height="80" fill="rgba(0,0,0,0.5)"/>
+  <text x="400" y="45" text-anchor="middle" fill="#ff4757" font-family="Segoe UI, Arial" font-size="28" font-weight="bold" filter="url(#intenseGlow)">
+    🚨 ALERTA DE SEGURANÇA 🚨
+  </text>
+  <text x="400" y="65" text-anchor="middle" fill="#ff6b81" font-family="Segoe UI, Arial" font-size="14">
+    COMPORTAMENTO SUSPEITO DETECTADO
+  </text>
+
+  <!-- Alert Modal -->
+  <g transform="translate(150, 100)" class="modal">
+    <!-- Modal Background -->
+    <rect x="0" y="0" width="500" height="280" rx="15" fill="rgba(20,20,30,0.95)" stroke="url(#dangerGrad)" stroke-width="3" filter="url(#intenseGlow)"/>
+
+    <!-- Modal Header -->
+    <rect x="0" y="0" width="500" height="60" rx="15" fill="url(#dangerGrad)"/>
+    <rect x="0" y="45" width="500" height="15" fill="rgba(20,20,30,0.95)"/>
+    <text x="250" y="38" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="20" font-weight="bold">
+      ⚠️ INCIDENTE REGISTRADO
+    </text>
+
+    <!-- Incident Details -->
+    <g transform="translate(30, 80)" font-family="Segoe UI, Arial">
+      <text x="0" y="0" fill="#888" font-size="11">ID DO INCIDENTE:</text>
+      <text x="0" y="20" fill="#00d9ff" font-family="Consolas, monospace" font-size="14" font-weight="bold">INC-2026062845-A7B3</text>
+
+      <text x="0" y="50" fill="#888" font-size="11">TIMESTAMP:</text>
+      <text x="0" y="70" fill="#2ed573" font-family="Consolas, monospace" font-size="14">2026-06-28 14:33:45 UTC</text>
+
+      <text x="260" y="0" fill="#888" font-size="11">CÂMERA:</text>
+      <text x="260" y="20" fill="#ffa502" font-family="Consolas, monospace" font-size="14" font-weight="bold">CAM-03</text>
+
+      <text x="260" y="50" fill="#888" font-size="11">PESSOAS:</text>
+      <text x="260" y="70" fill="#ff4757" font-family="Consolas, monospace" font-size="14" font-weight="bold">12 detectadas</text>
+    </g>
+
+    <!-- Threat Level Indicator -->
+    <g transform="translate(30, 170)">
+      <text x="0" y="0" fill="#888" font-family="Segoe UI, Arial" font-size="11">NÍVEL DE AMEAÇA:</text>
+      <!-- Threat meter -->
+      <rect x="0" y="15" width="200" height="20" rx="10" fill="rgba(255,255,255,0.1)"/>
+      <rect x="0" y="15" width="170" height="20" rx="10" fill="url(#dangerGrad)">
+        <animate attributeName="width" values="150;170;150" dur="1s" repeatCount="indefinite"/>
+      </rect>
+      <text x="180" y="30" fill="#ff4757" font-family="Segoe UI, Arial" font-size="16" font-weight="bold">ALTO</text>
+    </g>
+
+    <!-- Actions -->
+    <g transform="translate(30, 215)">
+      <text x="0" y="-5" fill="#888" font-family="Segoe UI, Arial" font-size="11">AÇÕES AUTOMÁTICAS:</text>
+
+      <!-- Action 1 -->
+      <g transform="translate(0, 15)">
+        <rect x="0" y="0" width="15" height="15" rx="3" fill="url(#successGrad)"/>
+        <path d="M4,7 L7,10 L11,5" stroke="white" stroke-width="2" fill="none"/>
+        <text x="20" y="11" fill="#2ed573" font-family="Segoe UI, Arial" font-size="11">📸 Foto salva</text>
+      </g>
+
+      <!-- Action 2 -->
+      <g transform="translate(0, 35)">
+        <rect x="0" y="0" width="15" height="15" rx="3" fill="url(#successGrad)"/>
+        <path d="M4,7 L7,10 L11,5" stroke="white" stroke-width="2" fill="none"/>
+        <text x="20" y="11" fill="#2ed573" font-family="Segoe UI, Arial" font-size="11">📧 Email enviado</text>
+      </g>
+
+      <!-- Action 3 -->
+      <g transform="translate(0, 55)">
+        <rect x="0" y="0" width="15" height="15" rx="3" fill="url(#warnGrad)">
+          <animate attributeName="fill" values="url(#warnGrad);url(#successGrad);url(#warnGrad)" dur="2s" repeatCount="indefinite"/>
+        </rect>
+        <text x="20" y="11" fill="#ffa502" font-family="Segoe UI, Arial" font-size="11">📡 Enviando webhook...</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Action Buttons -->
+  <g transform="translate(100, 400)">
+    <rect x="0" y="0" width="180" height="50" rx="10" fill="url(#btnGrad)" filter="url(#intenseGlow)" style="cursor: pointer">
+      <animate attributeName="opacity" values="1;0.7;1" dur="0.5s" repeatCount="indefinite"/>
+    </rect>
+    <text x="90" y="30" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">📞 CHAMAR POLÍCIA</text>
+
+    <rect x="210" y="0" width="180" height="50" rx="10" fill="#2a2a4a" stroke="#00d9ff" stroke-width="2" style="cursor: pointer"/>
+    <text x="300" y="30" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">📹 VER CÂMERA</text>
+
+    <rect x="420" y="0" width="180" height="50" rx="10" fill="#2a2a4a" stroke="#ffa502" stroke-width="2" style="cursor: pointer"/>
+    <text x="510" y="30" text-anchor="middle" fill="#ffa502" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">📋 VER LOGS</text>
+  </g>
+
+  <!-- Notification Badge -->
+  <g transform="translate(720, 120)">
+    <circle cx="40" cy="40" r="35" fill="rgba(255,71,87,0.2)" stroke="url(#dangerGrad)" stroke-width="3" class="alert-container"/>
+    <text x="40" y="35" text-anchor="middle" fill="#ff4757" font-family="Segoe UI, Arial" font-size="24" font-weight="bold">!</text>
+    <text x="40" y="55" text-anchor="middle" fill="#ff4757" font-family="Segoe UI, Arial" font-size="10" font-weight="bold">NOVO</text>
+  </g>
+</svg>

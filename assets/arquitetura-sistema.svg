@@ -1,0 +1,316 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <defs>
+    <style>
+      @keyframes data-flow {
+        0% { stroke-dashoffset: 100; opacity: 0.5; }
+        100% { stroke-dashoffset: 0; opacity: 1; }
+      }
+
+      @keyframes server-blink {
+        0%, 100% { fill: #2ed573; }
+        50% { fill: #7bed9f; }
+      }
+
+      @keyמות rotate-slow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      @keyframes expand-contract {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+
+      .data-line {
+        stroke-dasharray: 8 4;
+        animation: data-flow 1s linear infinite;
+      }
+
+      .server-light {
+        animation: server-blink 2s ease-in-out infinite;
+      }
+
+      .rotate-slow {
+        animation: rotate-slow 20s linear infinite;
+        transform-origin: center;
+      }
+
+      .expand-contract {
+        animation: expand-contract 3s ease-in-out infinite;
+        transform-origin: center;
+      }
+    </style>
+
+    <linearGradient id="archBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1b263b"/>
+      <stop offset="100%" stop-color="#0d1b2a"/>
+    </linearGradient>
+
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d9ff"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="100%" stop-color="#7bed9f"/>
+    </linearGradient>
+
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="600" fill="url(#archBg)"/>
+
+  <!-- Title -->
+  <text x="450" y="40" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="22" font-weight="bold">
+    🏗️ ARQUITETURA DO SISTEMA
+  </text>
+
+  <!-- Main Architecture Diagram -->
+  <g transform="translate(50, 70)">
+
+    <!-- Input Layer -->
+    <g transform="translate(0, 0)">
+      <text x="100" y="-10" text-anchor="middle" fill="#888" font-family="Segoe UI, Arial" font-size="12">ENTRADA</text>
+
+      <!-- Camera 1 -->
+      <g transform="translate(20, 0)" class="expand-contract">
+        <rect x="0" y="0" width="60" height="50" rx="8" fill="url(#cardGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="1"/>
+        <text x="30" y="25" text-anchor="middle" fill="#00d9ff" font-size="20">📹</text>
+        <text x="30" y="42" text-anchor="middle" fill="#aaa" font-size="8">IP CAM</text>
+      </g>
+
+      <!-- Camera 2 -->
+      <g transform="translate(100, 0)" class="expand-contract" style="animation-delay: 0.2s">
+        <rect x="0" y="0" width="60" height="50" rx="8" fill="url(#cardGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="1"/>
+        <text x="30" y="25" text-anchor="middle" fill="#00d9ff" font-size="20">📹</text>
+        <text x="30" y="42" text-anchor="middle" fill="#aaa" font-size="8">USB</text>
+      </g>
+
+      <!-- Camera 3 -->
+      <g transform="translate(180, 0)" class="expand-contract" style="animation-delay: 0.4s">
+        <rect x="0" y="0" width="60" height="50" rx="8" fill="url(#cardGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="1"/>
+        <text x="30" y="25" text-anchor="middle" fill="#00d9ff" font-size="20">📹</text>
+        <text x="30" y="42" text-anchor="middle" fill="#aaa" font-size="8">RTSP</text>
+      </g>
+
+      <!-- Camera 4 -->
+      <g transform="translate(260, 0)" class="expand-contract" style="animation-delay: 0.6s">
+        <rect x="0" y="0" width="60" height="50" rx="8" fill="url(#cardGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="1"/>
+        <text x="30" y="25" text-anchor="middle" fill="#00d9ff" font-size="20">📹</text>
+        <text x="30" y="42" text-anchor="middle" fill="#aaa" font-size="8">HTTP</text>
+      </g>
+
+      <!-- Data flow lines -->
+      <path d="M50 55 L50 80 L310 80 L310 100" stroke="url(#cyanGrad)" stroke-width="2" class="data-line" fill="none"/>
+      <path d="M130 55 L130 85 L310 85 L310 100" stroke="url(#cyanGrad)" stroke-width="2" class="data-line" fill="none"/>
+      <path d="M210 55 L210 90 L310 90 L310 100" stroke="url(#cyanGrad)" stroke-width="2" class="data-line" fill="none"/>
+      <path d="M290 55 L290 95 L310 95 L310 100" stroke="url(#cyanGrad)" stroke-width="2" class="data-line" fill="none"/>
+    </g>
+
+    <!-- Processing Layer -->
+    <g transform="translate(320, 30)">
+      <text x="100" y="-20" text-anchor="middle" fill="#888" font-family="Segoe UI, Arial" font-size="12">PROCESSAMENTO</text>
+
+      <rect x="0" y="0" width="200" height="100" rx="12" fill="url(#cardGrad)" stroke="url(#cyanGrad)" stroke-width="2" filter="url(#softGlow)"/>
+
+      <!-- CPU Icon -->
+      <g transform="translate(100, 50)">
+        <rect x="-30" y="-30" width="60" height="60" rx="8" fill="rgba(0,217,255,0.1)" stroke="url(#cyanGrad)" stroke-width="2"/>
+        <rect x="-15" y="-15" width="30" height="30" fill="url(#cyanGrad)" class="rotate-slow"/>
+        <circle cx="0" cy="0" r="8" fill="#0d1b2a"/>
+        <text x="0" y="4" text-anchor="middle" fill="#00d9ff" font-size="8" font-weight="bold">AI</text>
+      </g>
+
+      <!-- Processing labels -->
+      <text x="100" y="80" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">OpenCV + TensorFlow</text>
+      <text x="100" y="95" text-anchor="middle" fill="#666" font-family="Segoe UI, Arial" font-size="9">Thread Pool (4 workers)</text>
+    </g>
+
+    <!-- Output Layer -->
+    <g transform="translate(580, 0)">
+      <text x="80" y="-10" text-anchor="middle" fill="#888" font-family="Segoe UI, Arial" font-size="12">SAÍDA</text>
+
+      <!-- Dashboard -->
+      <g transform="translate(10, 0)">
+        <rect x="0" y="0" width="70" height="50" rx="8" fill="url(#cardGrad)" stroke="url(#greenGrad)" stroke-width="1"/>
+        <text x="35" y="25" text-anchor="middle" fill="#2ed573" font-size="18">🖥️</text>
+        <text x="35" y="42" text-anchor="middle" fill="#aaa" font-size="8">DASH</text>
+      </g>
+
+      <!-- Alerts -->
+      <g transform="translate(90, 0)">
+        <rect x="0" y="0" width="70" height="50" rx="8" fill="url(#cardGrad)" stroke="url(#purpleGrad)" stroke-width="1"/>
+        <text x="35" y="25" text-anchor="middle" fill="#a855f7" font-size="18">🔔</text>
+        <text x="35" y="42" text-anchor="middle" fill="#aaa" font-size="8">ALERT</text>
+      </g>
+
+      <!-- Logs -->
+      <g transform="translate(10, 60)">
+        <rect x="0" y="0" width="70" height="50" rx="8" fill="url(#cardGrad)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        <text x="35" y="25" text-anchor="middle" fill="#ffa502" font-size="18">📋</text>
+        <text x="35" y="42" text-anchor="middle" fill="#aaa" font-size="8">LOGS</text>
+      </g>
+
+      <!-- Storage -->
+      <g transform="translate(90, 60)">
+        <rect x="0" y="0" width="70" height="50" rx="8" fill="url(#cardGrad)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        <text x="35" y="25" text-anchor="middle" fill="#00d9ff" font-size="18">💾</text>
+        <text x="35" y="42" text-anchor="middle" fill="#aaa" font-size="8">DB</text>
+      </g>
+
+      <!-- Flow lines from processing -->
+      <path d="M520 80 L585 80 L585 25" stroke="url(#greenGrad)" stroke-width="2" class="data-line" fill="none"/>
+      <path d="M520 85 L575 85 L575 25" stroke="url(#purpleGrad)" stroke-width="2" class="data-line" fill="none"/>
+      <path d="M520 90 L545 90 L545 85 L545 85" stroke="url(#cyanGrad)" stroke-width="2" class="data-line" fill="none"/>
+      <path d="M520 95 L545 95 L545 145 L585 145 L585 85" stroke="url(#cyanGrad)" stroke-width="2" class="data-line" fill="none"/>
+    </g>
+  </g>
+
+  <!-- Technology Stack Section -->
+  <g transform="translate(50, 260)">
+    <rect x="0" y="0" width="380" height="150" rx="12" fill="url(#cardGrad)" stroke="rgba(0,217,255,0.2)" stroke-width="1"/>
+    <text x="20" y="30" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">⚙️ STACK TECNOLÓGICO</text>
+
+    <!-- Tech items -->
+    <g transform="translate(20, 50)">
+      <rect x="0" y="0" width="100" height="35" rx="6" fill="rgba(0,217,255,0.1)" stroke="url(#cyanGrad)" stroke-width="1"/>
+      <text x="50" y="22" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">🐍 Python 3.9+</text>
+
+      <rect x="115" y="0" width="100" height="35" rx="6" fill="rgba(46,213,115,0.1)" stroke="url(#greenGrad)" stroke-width="1"/>
+      <text x="165" y="22" text-anchor="middle" fill="#2ed573" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">📷 OpenCV</text>
+
+      <rect x="230" y="0" width="130" height="35" rx="6" fill="rgba(255,165,2,0.1)" stroke="url(#purpleGrad)" stroke-width="1"/>
+      <text x="295" y="22" text-anchor="middle" fill="#a855f7" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">🧠 TensorFlow 2.13+</text>
+    </g>
+
+    <g transform="translate(20, 95)">
+      <rect x="0" y="0" width="100" height="35" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <text x="50" y="22" text-anchor="middle" fill="#aaa" font-family="Segoe UI, Arial" font-size="11">🔢 NumPy</text>
+
+      <rect x="115" y="0" width="100" height="35" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <text x="165" y="22" text-anchor="middle" fill="#aaa" font-family="Segoe UI, Arial" font-size="11">🌐 Requests</text>
+
+      <rect x="230" y="0" width="130" height="35" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <text x="295" y="22" text-anchor="middle" fill="#aaa" font-family="Segoe UI, Arial" font-size="11">🧵 ThreadPool</text>
+    </g>
+  </g>
+
+  <!-- Security Features -->
+  <g transform="translate(450, 260)">
+    <rect x="0" y="0" width="400" height="150" rx="12" fill="url(#cardGrad)" stroke="rgba(255,71,87,0.2)" stroke-width="1"/>
+    <text x="20" y="30" fill="#ff4757" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">🔒 SEGURANÇA</text>
+
+    <g transform="translate(20, 50)">
+      <!-- Feature 1 -->
+      <g>
+        <circle cx="10" cy="10" r="8" fill="url(#greenGrad)"/>
+        <path d="M7,10 L10,13 L13,7" stroke="white" stroke-width="2" fill="none"/>
+        <text x="25" y="14" fill="#aaa" font-family="Segoe UI, Arial" font-size="11">Hash SHA-256 com salt</text>
+      </g>
+
+      <!-- Feature 2 -->
+      <g transform="translate(0, 25)">
+        <circle cx="10" cy="10" r="8" fill="url(#greenGrad)"/>
+        <path d="M7,10 L10,13 L13,7" stroke="white" stroke-width="2" fill="none"/>
+        <text x="25" y="14" fill="#aaa" font-family="Segoe UI, Arial" font-size="11">Validação anti-SSRF</text>
+      </g>
+
+      <!-- Feature 3 -->
+      <g transform="translate(180, 0)">
+        <circle cx="10" cy="10" r="8" fill="url(#greenGrad)"/>
+        <path d="M7,10 L10,13 L13,7" stroke="white" stroke-width="2" fill="none"/>
+        <text x="25" y="14" fill="#aaa" font-family="Segoe UI, Arial" font-size="11">Logs auditáveis</text>
+      </g>
+
+      <!-- Feature 4 -->
+      <g transform="translate(180, 25)">
+        <circle cx="10" cy="10" r="8" fill="url(#greenGrad)"/>
+        <path d="M7,10 L10,13 L13,7" stroke="white" stroke-width="2" fill="none"/>
+        <text x="25" y="14" fill="#aaa" font-family="Segoe UI, Arial" font-size="11">Rotação de logs 10MB</text>
+      </g>
+    </g>
+
+    <g transform="translate(20, 110)">
+      <rect x="0" y="0" width="360" height="30" rx="6" fill="rgba(255,71,87,0.1)" stroke="rgba(255,71,87,0.3)" stroke-width="1"/>
+      <text x="180" y="20" text-anchor="middle" fill="#ff6b81" font-family="Segoe UI, Arial" font-size="10">⚠️ LGPD Compliance - Anonimização de dados</text>
+    </g>
+  </g>
+
+  <!-- Performance Metrics Bar -->
+  <g transform="translate(50, 430)">
+    <rect x="0" y="0" width="800" height="80" rx="12" fill="url(#cardGrad)" stroke="rgba(0,217,255,0.2)" stroke-width="1"/>
+    <text x="20" y="25" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="12" font-weight="bold">⚡ PERFORMANCE EM TEMPO REAL</text>
+
+    <!-- Metric bars -->
+    <g transform="translate(20, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">CPU</text>
+      <rect x="0" y="8" width="100" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+      <rect x="0" y="8" width="45" height="8" rx="4" fill="url(#cyanGrad)">
+        <animate attributeName="width" values="45;50;45" dur="2s" repeatCount="indefinite"/>
+      </rect>
+      <text x="110" y="15" fill="#00d9ff" font-size="10" font-weight="bold">45%</text>
+    </g>
+
+    <g transform="translate(150, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">RAM</text>
+      <rect x="0" y="8" width="100" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+      <rect x="0" y="8" width="62" height="8" rx="4" fill="url(#greenGrad)">
+        <animate attributeName="width" values="62;65;62" dur="3s" repeatCount="indefinite"/>
+      </rect>
+      <text x="110" y="15" fill="#2ed573" font-size="10" font-weight="bold">62%</text>
+    </g>
+
+    <g transform="translate(280, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">FPS</text>
+      <rect x="0" y="8" width="100" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+      <rect x="0" y="8" width="75" height="8" rx="4" fill="url(#purpleGrad)">
+        <animate attributeName="width" values="75;78;75" dur="1s" repeatCount="indefinite"/>
+      </rect>
+      <text x="110" y="15" fill="#a855f7" font-size="10" font-weight="bold">28-30</text>
+    </g>
+
+    <g transform="translate(410, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">Latência</text>
+      <rect x="0" y="8" width="100" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+      <rect x="0" y="8" width="35" height="8" rx="4" fill="url(#cyanGrad)"/>
+      <text x="110" y="15" fill="#00d9ff" font-size="10" font-weight="bold">~33ms</text>
+    </g>
+
+    <g transform="translate(540, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">Threads</text>
+      <rect x="0" y="8" width="100" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+      <rect x="0" y="8" width="40" height="8" rx="4" fill="url(#greenGrad)"/>
+      <text x="110" y="15" fill="#2ed573" font-size="10" font-weight="bold">4 ativas</text>
+    </g>
+
+    <g transform="translate(670, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">Câmeras</text>
+      <rect x="0" y="8" width="100" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+      <rect x="0" y="8" width="50" height="8" rx="4" fill="url(#purpleGrad)"/>
+      <text x="110" y="15" fill="#a855f7" font-size="10" font-weight="bold">4/8 max</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <text x="450" y="540" text-anchor="middle" fill="#444" font-family="Segoe UI, Arial" font-size="10">
+    O-olho-de-DEUS v2.0 | Sistema de Segurança com IA | 2026
+  </text>
+</svg>

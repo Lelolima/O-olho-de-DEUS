@@ -1,0 +1,11 @@
+{
+  "security_level": "medium",
+  "video_sources": [
+    "0"
+  ],
+  "notification_emails": [],
+  "notification_webhook": null,
+  "log_level": "INFO",
+  "confidence_threshold": 0.7,
+  "incident_retention_days": 30
+}

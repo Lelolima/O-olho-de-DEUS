@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400">
+  <defs>
+    <style>
+      @keyframes flow-move {
+        0% { stroke-dashoffset: 100; opacity: 0.3; }
+        50% { opacity: 1; }
+        100% { stroke-dashoffset: 0; opacity: 0.3; }
+      }
+
+      @keyframes node-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+      }
+
+      @keyframes check-appear {
+        0% { transform: scale(0); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+
+      @keyframes glow-pulse {
+        0%, 100% { filter: drop-shadow(0 0 5px rgba(0,217,255,0.5)); }
+        50% { filter: drop-shadow(0 0 20px rgba(0,217,255,0.8)); }
+      }
+
+      .flow-line {
+        stroke-dasharray: 10 5;
+        animation: flow-move 1s linear infinite;
+      }
+
+      .node-pulse {
+        animation: node-pulse 2s ease-in-out infinite;
+        transform-origin: center;
+      }
+
+      .check-mark {
+        animation: check-appear 0.3s ease-out forwards;
+        transform-origin: center;
+      }
+
+      .glow-effect {
+        animation: glow-pulse 1.5s ease-in-out infinite;
+      }
+    </style>
+
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d9ff"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+
+    <linearGradient id="successGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="100%" stop-color="#7bed9f"/>
+    </linearGradient>
+
+    <linearGradient id="warnGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffa502"/>
+      <stop offset="100%" stop-color="#ff7f50"/>
+    </linearGradient>
+
+    <linearGradient id="dangerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#ff6b81"/>
+    </linearGradient>
+
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="100%" stop-color="#1a1a3a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="400" fill="url(#bgGrad)"/>
+
+  <!-- Title -->
+  <text x="450" y="40" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="20" font-weight="bold">
+    🔁 FLUXO DE DETECÇÃO EM TEMPO REAL
+  </text>
+
+  <!-- Flow Diagram -->
+  <g transform="translate(50, 80)">
+
+    <!-- Step 1: Camera -->
+    <g class="node-pulse">
+      <rect x="0" y="0" width="120" height="80" rx="10" fill="url(#nodeGrad)" filter="url(#glow-effect)"/>
+      <text x="60" y="35" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="24">📹</text>
+      <text x="60" y="60" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">CAPTURA</text>
+      <text x="60" y="75" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Segoe UI, Arial" font-size="9">Câmera/IP</text>
+    </g>
+
+    <!-- Arrow 1 -->
+    <path d="M125 40 L175 40" stroke="url(#successGrad)" stroke-width="3" class="flow-line" marker-end="url(#arrowhead)"/>
+    <polygon id="arrowhead" points="175,40 165,35 165,45" fill="url(#successGrad)"/>
+
+    <!-- Step 2: Pre-processing -->
+    <g class="node-pulse" style="animation-delay: 0.2s">
+      <rect x="180" y="0" width="120" height="80" rx="10" fill="url(#warnGrad)" filter="url(#glow-effect)"/>
+      <text x="240" y="35" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="24">⚙️</text>
+      <text x="240" y="60" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">PRE-PROCESS</text>
+      <text x="240" y="75" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Segoe UI, Arial" font-size="9">Gray/Resize</text>
+    </g>
+
+    <!-- Arrow 2 -->
+    <path d="M305 40 L355 40" stroke="url(#successGrad)" stroke-width="3" class="flow-line"/>
+
+    <!-- Step 3: Face Detection -->
+    <g class="node-pulse" style="animation-delay: 0.4s">
+      <rect x="360" y="0" width="120" height="80" rx="10" fill="url(#nodeGrad)" filter="url(#glow-effect)"/>
+      <text x="420" y="35" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="24">🔍</text>
+      <text x="420" y="60" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">FACE DETECT</text>
+      <text x="420" y="75" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Segoe UI, Arial" font-size="9">Haar Cascade</text>
+    </g>
+
+    <!-- Arrow 3 -->
+    <path d="M485 40 L535 40" stroke="url(#successGrad)" stroke-width="3" class="flow-line"/>
+
+    <!-- Step 4: Behavior Analysis -->
+    <g class="node-pulse" style="animation-delay: 0.6s">
+      <rect x="540" y="0" width="120" height="80" rx="10" fill="url(#warnGrad)" filter="url(#glow-effect)"/>
+      <text x="600" y="35" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="24">🧠</text>
+      <text x="600" y="60" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">ANÁLISE IA</text>
+      <text x="600" y="75" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Segoe UI, Arial" font-size="9">ML Behavior</text>
+    </g>
+
+    <!-- Arrow 4 -->
+    <path d="M665 40 L715 40" stroke="url(#successGrad)" stroke-width="3" class="flow-line"/>
+
+    <!-- Step 5: Decision -->
+    <g class="node-pulse" style="animation-delay: 0.8s">
+      <rect x="720" y="0" width="120" height="80" rx="10" fill="url(#nodeGrad)" filter="url(#glow-effect)"/>
+      <text x="780" y="35" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="24">⚖️</text>
+      <text x="780" y="60" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">DECISÃO</text>
+      <text x="780" y="75" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Segoe UI, Arial" font-size="9">Threshold</text>
+    </g>
+  </g>
+
+  <!-- Output Paths -->
+  <g transform="translate(50, 200)">
+
+    <!-- Normal Path (down) -->
+    <path d="M110 40 L110 80 L200 80" stroke="url(#successGrad)" stroke-width="2" stroke-dasharray="5,5" fill="none"/>
+    <g transform="translate(200, 60)">
+      <rect x="0" y="0" width="140" height="50" rx="8" fill="rgba(46,213,115,0.2)" stroke="url(#successGrad)" stroke-width="2"/>
+      <text x="70" y="30" text-anchor="middle" fill="#2ed573" font-family="Segoe UI, Arial" font-size="12" font-weight="bold">✅ NORMAL</text>
+      <text x="70" y="45" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="Segoe UI, Arial" font-size="9">Continua monitorando</text>
+    </g>
+
+    <!-- Alert Path (right) -->
+    <path d="M780 40 L780 80 L650 80" stroke="url(#dangerGrad)" stroke-width="2" stroke-dasharray="5,5" fill="none"/>
+    <g transform="translate(580, 60)">
+      <rect x="0" y="0" width="140" height="50" rx="8" fill="rgba(255,71,87,0.2)" stroke="url(#dangerGrad)" stroke-width="2"/>
+      <text x="70" y="30" text-anchor="middle" fill="#ff4757" font-family="Segoe UI, Arial" font-size="12" font-weight="bold">🚨 ALERTA</text>
+      <text x="70" y="45" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="Segoe UI, Arial" font-size="9">Notifica autoridades</text>
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite"/>
+    </g>
+  </g>
+
+  <!-- Performance Metrics -->
+  <g transform="translate(50, 280)">
+    <rect x="0" y="0" width="800" height="100" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(0,217,255,0.3)" stroke-width="1"/>
+
+    <text x="20" y="30" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">⚡ MÉTRICAS DE PERFORMANCE</text>
+
+    <!-- Metric 1 -->
+    <g transform="translate(40, 50)">
+      <text x="0" y="0" fill="#888" font-family="Segoe UI, Arial" font-size="11">Tempo Processamento</text>
+      <text x="0" y="25" fill="#2ed573" font-family="Consolas, monospace" font-size="18" font-weight="bold">~33ms</text>
+      <text x="80" y="25" fill="#888" font-family="Segoe UI, Arial" font-size="11">por frame</text>
+    </g>
+
+    <!-- Metric 2 -->
+    <g transform="translate(200, 50)">
+      <text x="0" y="0" fill="#888" font-family="Segoe UI, Arial" font-size="11">FPS</text>
+      <text x="0" y="25" fill="#00d9ff" font-family="Consolas, monospace" font-size="18" font-weight="bold">28-30</text>
+      <text x="70" y="25" fill="#888" font-family="Segoe UI, Arial" font-size="11">tempo real</text>
+    </g>
+
+    <!-- Metric 3 -->
+    <g transform="translate(360, 50)">
+      <text x="0" y="0" fill="#888" font-family="Segoe UI, Arial" font-size="11">Precisão Detecção</text>
+      <text x="0" y="25" fill="#ffa502" font-family="Consolas, monospace" font-size="18" font-weight="bold">95%+</text>
+      <text x="80" y="25" fill="#888" font-family="Segoe UI, Arial" font-size="11">Haar Cascade</text>
+    </g>
+
+    <!-- Metric 4 -->
+    <g transform="translate(520, 50)">
+      <text x="0" y="0" fill="#888" font-family="Segoe UI, Arial" font-size="11">Câmeras Simultâneas</text>
+      <text x="0" y="25" fill="#ff4757" font-family="Consolas, monospace" font-size="18" font-weight="bold">4-8</text>
+      <text x="60" y="25" fill="#888" font-family="Segoe UI, Arial" font-size="11">threads</text>
+    </g>
+
+    <!-- Metric 5 -->
+    <g transform="translate(680, 50)">
+      <text x="0" y="0" fill="#888" font-family="Segoe UI, Arial" font-size="11">Uso CPU</text>
+      <text x="0" y="25" fill="#00d9ff" font-family="Consolas, monospace" font-size="18" font-weight="bold">~45%</text>
+      <text x="70" y="25" fill="#888" font-family="Segoe UI, Arial" font-size="11">i7 moderno</text>
+    </g>
+  </g>
+</svg>

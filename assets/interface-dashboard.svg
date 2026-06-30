@@ -1,0 +1,244 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <defs>
+    <style>
+      /* Gradientes */
+      .bg-gradient {
+        stop-color: #0a0a1a;
+      }
+      .bg-gradient-end {
+        stop-color: #1a1a3a;
+      }
+      .screen-gradient {
+        stop-color: #0d1b2a;
+      }
+      .screen-gradient-end {
+        stop-color: #1b263b;
+      }
+      .accent-gradient {
+        stop-color: #00d9ff;
+      }
+      .accent-gradient-end {
+        stop-color: #0077b6;
+      }
+      .danger-gradient {
+        stop-color: #ff4757;
+      }
+      .danger-gradient-end {
+        stop-color: #ff6b81;
+      }
+      .success-gradient {
+        stop-color: #2ed573;
+      }
+      .success-gradient-end {
+        stop-color: #7bed9f;
+      }
+
+      /* Animações */
+      @keyframes scan {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(280px); }
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.05); }
+      }
+
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
+
+      @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      @keyframes alert-flash {
+        0%, 100% { fill: #ff4757; opacity: 1; }
+        50% { fill: #ff6b81; opacity: 0.7; }
+      }
+
+      @keyframes face-detect {
+        0%, 100% { stroke: #00d9ff; stroke-width: 3; }
+        50% { stroke: #0077b6; stroke-width: 2; opacity: 0.7; }
+      }
+
+      @keyframes slide-in {
+        0% { transform: translateX(-100%); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+      }
+
+      @keyframes typing {
+        from { width: 0; }
+        to { width: 100%; }
+      }
+
+      .scan-line {
+        animation: scan 3s ease-in-out infinite;
+      }
+
+      .pulse {
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .blink {
+        animation: blink 1s ease-in-out infinite;
+      }
+
+      .rotate {
+        animation: rotate 8s linear infinite;
+        transform-origin: center;
+      }
+
+      .alert-flash {
+        animation: alert-flash 0.5s ease-in-out infinite;
+      }
+
+      .face-detect {
+        animation: face-detect 1.5s ease-in-out infinite;
+        fill: none;
+      }
+
+      .slide-in {
+        animation: slide-in 0.5s ease-out forwards;
+      }
+
+      .status-dot {
+        animation: blink 2s ease-in-out infinite;
+      }
+    </style>
+
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" class="bg-gradient"/>
+      <stop offset="100%" class="bg-gradient-end"/>
+    </linearGradient>
+
+    <linearGradient id="screenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" class="screen-gradient"/>
+      <stop offset="100%" class="screen-gradient-end"/>
+    </linearGradient>
+
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" class="accent-gradient"/>
+      <stop offset="100%" class="accent-gradient-end"/>
+    </linearGradient>
+
+    <linearGradient id="dangerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" class="danger-gradient"/>
+      <stop offset="100%" class="danger-gradient-end"/>
+    </linearGradient>
+
+    <linearGradient id="successGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" class="success-gradient"/>
+      <stop offset="100%" class="success-gradient-end"/>
+    </linearGradient>
+
+    <!-- Filter for glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bgGrad)"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="800" height="50" fill="rgba(0,0,0,0.3)"/>
+  <text x="20" y="32" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="18" font-weight="bold">👁️ O-OLHO-DE-DEUS</text>
+  <text x="780" y="32" fill="#2ed573" font-family="Segoe UI, Arial" font-size="12" text-anchor="end" class="pulse">● SISTEMA ONLINE</text>
+
+  <!-- Main Screen -->
+  <rect x="20" y="70" width="500" height="300" rx="10" fill="url(#screenGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="2"/>
+
+  <!-- Camera Feed Placeholder -->
+  <rect x="30" y="80" width="480" height="280" rx="5" fill="#0a0a15"/>
+
+  <!-- Grid overlay -->
+  <g stroke="rgba(0,217,255,0.1)" stroke-width="1">
+    <line x1="30" y1="150" x2="510" y2="150"/>
+    <line x1="30" y1="220" x2="510" y2="220"/>
+    <line x1="190" y1="80" x2="190" y2="360"/>
+    <line x1="350" y1="80" x2="350" y2="360"/>
+  </g>
+
+  <!-- Scanning line -->
+  <line x1="30" y1="80" x2="510" y2="80" stroke="url(#accentGrad)" stroke-width="2" class="scan-line" opacity="0.8"/>
+
+  <!-- Face detection boxes -->
+  <rect x="120" y="110" width="60" height="70" class="face-detect" rx="5"/>
+  <circle cx="140" cy="135" r="5" fill="#00d9ff" class="blink"/>
+  <circle cx="160" cy="135" r="5" fill="#00d9ff" class="blink"/>
+
+  <rect x="280" y="140" width="60" height="70" class="face-detect" rx="5" style="animation-delay: 0.3s"/>
+  <circle cx="300" cy="165" r="5" fill="#00d9ff" class="blink" style="animation-delay: 0.5s"/>
+  <circle cx="320" cy="165" r="5" fill="#00d9ff" class="blink" style="animation-delay: 0.5s"/>
+
+  <rect x="380" y="120" width="60" height="70" class="face-detect" rx="5" style="animation-delay: 0.6s"/>
+  <circle cx="400" cy="145" r="5" fill="#00d9ff" class="blink" style="animation-delay: 1s"/>
+  <circle cx="420" cy="145" r="5" fill="#00d9ff" class="blink" style="animation-delay: 1s"/>
+
+  <!-- Corner decorations -->
+  <circle cx="30" cy="80" r="5" fill="#00d9ff" class="pulse"/>
+  <circle cx="510" cy="80" r="5" fill="#00d9ff" class="pulse"/>
+  <circle cx="30" cy="360" r="5" fill="#00d9ff" class="pulse"/>
+  <circle cx="510" cy="360" r="5" fill="#00d9ff" class="pulse"/>
+
+  <!-- Side Panel -->
+  <rect x="540" y="70" width="240" height="300" rx="10" fill="url(#screenGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="2"/>
+
+  <!-- Panel Header -->
+  <text x="560" y="100" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">📊 ESTATÍSTICAS</text>
+
+  <!-- Stats -->
+  <g font-family="Segoe UI, Arial" font-size="12">
+    <text x="560" y="130" fill="#888">Câmeras Ativas:</text>
+    <text x="700" y="130" fill="#2ed573" font-weight="bold" class="status-dot">4/4</text>
+
+    <text x="560" y="160" fill="#888">Rostos Detectados:</text>
+    <text x="700" y="160" fill="#00d9ff" font-weight="bold">3</text>
+
+    <text x="560" y="190" fill="#888">Incidentes Hoje:</text>
+    <text x="700" y="190" fill="#ff4757" font-weight="bold">2</text>
+
+    <text x="560" y="220" fill="#888">FPS Médio:</text>
+    <text x="700" y="220" fill="#ffa502" font-weight="bold">28</text>
+
+    <text x="560" y="250" fill="#888">Uso CPU:</text>
+    <text x="700" y="250" fill="#00d9ff" font-weight="bold">45%</text>
+  </g>
+
+  <!-- CPU Bar -->
+  <rect x="560" y="260" width="120" height="8" rx="4" fill="rgba(255,255,255,0.1)"/>
+  <rect x="560" y="260" width="54" height="8" rx="4" fill="url(#accentGrad)">
+    <animate attributeName="width" values="54;60;54" dur="2s" repeatCount="indefinite"/>
+  </rect>
+  <text x="690" y="268" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="10">45%</text>
+
+  <!-- Alert Button (pulsing) -->
+  <rect x="560" y="290" width="200" height="40" rx="8" fill="url(#dangerGrad)" class="pulse" cursor="pointer"/>
+  <text x="660" y="315" fill="white" font-family="Segoe UI, Arial" font-size="14" font-weight="bold" text-anchor="middle">🚨 ALERTAR AUTORIDADES</text>
+
+  <!-- Bottom Log Panel -->
+  <rect x="20" y="385" width="760" height="95" rx="10" fill="url(#screenGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="2"/>
+
+  <text x="40" y="410" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="12" font-weight="bold">📋 LOG DE ATIVIDADES</text>
+
+  <!-- Log entries with typing effect -->
+  <g font-family="Consolas, monospace" font-size="10">
+    <text x="40" y="435" fill="#2ed573">[14:32:15] ✅ Sistema inicializado com sucesso</text>
+    <text x="40" y="450" fill="#00d9ff">[14:32:18] 📹 4 câmeras conectadas</text>
+    <text x="40" y="465" fill="#ffa502">[14:33:01] ⚠️ 3 rostos detectados - Cam-01</text>
+    <text x="40" y="480" fill="#ff4757" class="blink">[14:33:45] 🚨 ALERTA: Movimento suspeito - Cam-03</text>
+  </g>
+
+  <!-- Rotating loader in corner -->
+  <g transform="translate(750, 420)">
+    <circle r="15" fill="none" stroke="rgba(0,217,255,0.3)" stroke-width="2"/>
+    <path d="M0,-15 A15,15 0 0,1 10.6,-10.6" stroke="url(#accentGrad)" stroke-width="2" fill="none" class="rotate"/>
+  </g>
+</svg>
