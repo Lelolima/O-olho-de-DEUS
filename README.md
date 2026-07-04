@@ -1,124 +1,134 @@
-# 👁️ O-olho-de-DEUS
+# 👁️ O-olho-de-DEUS v3.0.1
 
-Sistema de Segurança e Monitoramento com Inteligência Artificial.
+Sistema de Vigilância com IA - Arquitetura Edge-to-Cloud com Privacy by Design.
 
-> **Demonstração Interativa:** As animações SVG abaixo demonstram a interface e o fluxo de funcionamento do sistema em tempo real.
+> **Demonstração Interativa:** As animações SVG abaixo demonstram a arquitetura v3.0.1 com Edge AI, HITL Dashboard e Forensic Logging.
 
 ---
 
 ## 🎬 Demos Visuais
 
-### 📊 Dashboard Principal
+### 🏗️ Arquitetura Edge-to-Cloud
 
 <details>
-<summary><b>🖱️ Clique para ver a animação do Dashboard</b></summary>
+<summary><b>🖱️ Clique para ver a arquitetura completa</b></summary>
 <br>
 
-![Dashboard do Sistema](assets/interface-dashboard.svg)
-
-**O que você está vendo:**
-- 🔵 **Varredura em tempo real** - A linha ciano scanning representa o processamento contínuo de vídeo
-- 🟢 **Detecção facial** - Caixas azuis ao redor dos rostos detectados (Haar Cascade)
-- 📈 **Estatísticas live** - CPU, FPS, câmeras ativas atualizadas em tempo real
-- 📋 **Log de atividades** - Scroll automático de eventos do sistema
-- ⭕ **Loading indicator** - Processamento em background (canto inferior direito)
-</details>
-
----
-
-### 🔄 Fluxo de Detecção
-
-<details>
-<summary><b>🖱️ Clique para ver a animação do Fluxo</b></summary>
-<br>
-
-![Fluxo de Detecção](assets/fluxo-deteccao.svg)
-
-**Pipeline de processamento:**
-1. **📹 Captura** - Múltiplas fontes de vídeo (IP, USB, RTSP, HTTP)
-2. **⚙️ Pre-Process** - Conversão para grayscale, redimensionamento
-3. **🔍 Face Detect** - OpenCV Haar Cascades identifica rostos
-4. **🧠 Análise IA** - TensorFlow ML para comportamento suspeito
-5. **⚖️ Decisão** - Threshold configurável determina alerta
-
-**Caminhos de saída:**
-- ✅ **Normal** - Continua monitorando (verde)
-- 🚨 **Alerta** - Notifica autoridades (vermelho pulsante)
-
-**Métricas de performance:**
-- Processamento: ~33ms/frame
-- FPS: 28-30 (tempo real)
-- Precisão: 95%+ 
-- Câmeras simultâneas: 4-8 threads
-- Uso CPU: ~45% (i7 moderno)
-</details>
-
----
-
-### 🚨 Sistema de Alertas
-
-<details>
-<summary><b>🖱️ Clique para ver a animação de Alerta</b></summary>
-<br>
-
-![Alerta de Segurança](assets/alerta-seguranca.svg)
-
-**Quando um alerta é disparado:**
-- 🚨 **Sirenes visuais** - Animação de rotação + piscar
-- 🔴 **Flash vermelho** - Toda a interface pulsa em alerta
-- 📸 **Auto-capture** - Foto do incidente salva automaticamente
-- 📧 **Notificações** - Email + webhook enviados
-- 📊 **Nível de ameaça** - Barra indicadora (BAIXO/MÉDIO/ALTO/CRÍTICO)
-- ⚡ **Ações rápidas** - Botões para chamar polícia, ver câmera, ver logs
-
-**Dados do incidente registrados:**
-- ID único (UUID)
-- Timestamp ISO 8601
-- Câmera de origem
-- Número de pessoas detectadas
-- Hash criptografado dos dados faciais
-</details>
-
----
-
-### 🏗️ Arquitetura do Sistema
-
-<details>
-<summary><b>🖱️ Clique para ver a animação da Arquitetura</b></summary>
-<br>
-
-![Arquitetura](assets/arquitetura-sistema.svg)
+![Arquitetura Edge-to-Cloud](assets/arquitetura-edge-cloud.svg)
 
 **Camadas do sistema:**
 
 | Camada | Componentes | Tecnologias |
 |--------|-------------|-------------|
-| **Entrada** | Câmeras IP, USB, RTSP, HTTP | OpenCV VideoCapture |
-| **Processamento** | AI Engine, Thread Pool | TensorFlow, ThreadPoolExecutor |
-| **Saída** | Dashboard, Alertas, Logs, DB | SMTP, Webhooks, JSON |
+| **📡 Edge Layer** | Câmeras RTSP, Edge AI Processor, Dynamic Masking | YOLOv8-Face, FaceNet 512, TensorRT/OpenVINO |
+| **☁️ Cloud Layer** | Kafka/PubSub, PostgreSQL + pgvector, S3/GCS | FastAPI, SQLAlchemy, pgvector |
+| **🔒 Forensic** | Merkle Tree, Timestamp Authority | RFC 3161, FreeTSA, SHA-256 |
+| **🖥️ HITL** | Dashboard, Triagem Humana | WebSocket, OAuth2/JWT |
+| **⚖️ Fairness** | Monitoramento de Viés | Demographic Parity, FPR Balance |
 
-**Stack tecnológico:**
-- 🐍 Python 3.9+
-- 📷 OpenCV (detecção facial)
-- 🧠 TensorFlow 2.13+ (ML behavior)
-- 🔢 NumPy (processamento numérico)
-- 🌐 Requests (webhooks/notifications)
-- 🧵 ThreadPoolExecutor (concorrência)
+**Inovações v3.0.1:**
+- ✅ Apenas metadados JSON sobem para cloud (sem frames brutos)
+- ✅ Dynamic Masking: rostos borrados na borda (Privacy by Design)
+- ✅ Merkle Tree + TSA: cadeia de custódia imutável
+- ✅ HITL obrigatório antes de notificar autoridades
+- ✅ Fairness monitoring contínuo
 
-**Recursos de segurança:**
-- ✅ Hash SHA-256 com salt para dados faciais
-- ✅ Validação anti-SSRF para URLs de vídeo
-- ✅ Logs auditáveis com rotação (10MB, 5 backups)
-- ✅ Limpeza automática de incidentes antigos
-- ⚠️ LGPD Compliance - anonimização de dados
+</details>
 
-**Performance em tempo real:**
-- CPU: ~45%
-- RAM: ~62%
-- FPS: 28-30
-- Latência: ~33ms
-- Threads: 4 ativas
-- Câmeras: 4/8 máx
+---
+
+### 🔍 Fluxo de Detecção Edge
+
+<details>
+<summary><b>🖱️ Clique para ver o pipeline Edge AI</b></summary>
+<br>
+
+![Fluxo Edge Detection](assets/fluxo-edge-detection.svg)
+
+**Pipeline de processamento:**
+1. **📡 Streams RTSP** - 4-8 câmeras simultâneas
+2. **🎯 YOLOv8-Face** - Detecção facial em tempo real (30 FPS)
+3. **🧠 FaceNet 512** - Extração de embeddings (512-dim vector)
+4. **🔒 Dynamic Masking** - Gaussian Blur σ=99 na borda
+5. **📄 Metadata JSON** - Apenas metadados sobem (sem frame bruto)
+6. **⚖️ Threshold Decision** - LOW (drop) | MEDIUM (log) | HIGH (cloud + HITL)
+
+**Performance:**
+| Métrica | Valor |
+|---------|-------|
+| FPS | 30 @ 1080p |
+| Latência | ~33ms |
+| Embeddings | 512-dim |
+| Banda | 99% menor (sem frames brutos) |
+| Câmeras | 4-8 por thread |
+
+**Two-Key Unblur:**
+- Chave 1: `alarm_score ≥ 0.98`
+- Chave 2: `HITL approve`
+- → Desofusca ROI do rosto
+
+</details>
+
+---
+
+### 🖥️ HITL Dashboard
+
+<details>
+<summary><b>🖱️ Clique para ver o painel de triagem</b></summary>
+<br>
+
+![HITL Dashboard](assets/dashboard-hitl.svg)
+
+**Funcionalidades:**
+- 🔔 **WebSocket** - Alertas push em tempo real
+- 📊 **Fila de Alertas** - Priorização por score
+- 📈 **Estatísticas 24h** - Total, revisados, escalonados, descartados
+- ⚖️ **Fairness Widget** - Demographic parity, FPR balance
+- 🔒 **Two-Key Unblur** - score ≥ 0.98 + HITL approve
+
+**Atalhos de teclado:**
+| Tecla | Ação |
+|-------|------|
+| `E` | Escalar (notificar authorities) |
+| `D` | Descartar (falso positivo) |
+| `U` | Unblur (requer duas chaves) |
+| `L` | Ver logs forenses |
+
+**Métricas de HITL:**
+- Tempo médio de revisão: ~23s
+- Alertas revisados (24h): 42
+- Escalonados: 8
+- Descartados: 34
+
+</details>
+
+---
+
+### 🚨 Fluxo de Alerta
+
+<details>
+<summary><b>🖱️ Clique para ver o fluxo de alerta</b></summary>
+<br>
+
+![Alerta Segurança](assets/alerta-seguranca-v3.svg)
+
+**Pipeline de alerta:**
+1. **📹 Detecção** - YOLOv8-Face identifica rostos
+2. **🧠 Edge AI** - FaceNet extrai embeddings
+3. **⚖️ Threshold** - score ≥ 0.85 dispara alerta
+4. **👤 HITL Review** - Operador valida antes de notificar
+5. **🔔 Notifica** - Authorities + Logs forenses
+
+**Métricas:**
+| Métrica | Valor |
+|---------|-------|
+| Tempo Detecção | ~33ms |
+| Threshold | 0.85 |
+| Review HITL | ~23s médio |
+| True Positives (24h) | 8 |
+| False Positives | 34 |
+| Precisão | 19% |
+
 </details>
 
 ---
@@ -138,13 +148,16 @@ Este software é **apenas para fins educacionais e de pesquisa**. O uso em ambie
 
 | Funcionalidade | Descrição | Status |
 |---------------|-----------|--------|
-| Detecção Facial | OpenCV Haar Cascades | ✅ Produção |
-| Múltiplas Câmeras | Thread Pool (4-8 streams) | ✅ Produção |
-| Análise Comportamental | TensorFlow ML | ⚠️ Requer modelo |
-| Alertas Automáticos | Email + Webhook | ✅ Produção |
-| Logs Auditáveis | SHA-256 hash + JSON | ✅ Produção |
-| Dashboard Real-time | SVG/HTML interface | 🚧 Em desenvolvimento |
-| Reconhecimento Facial | Identificação por nome | 🚧 Futuro |
+| **Edge AI** | YOLOv8-Face + FaceNet 512 na borda | ✅ Produção |
+| **Dynamic Masking** | Blur de rostos na borda (Privacy by Design) | ✅ Produção |
+| **Múltiplas Câmeras** | 4-8 streams RTSP simultâneos | ✅ Produção |
+| **Merkle Tree** | Cadeia de custódia imutável | ✅ Produção |
+| **Timestamp Authority** | RFC 3161 via FreeTSA | ✅ Produção |
+| **HITL Dashboard** | Triagem humana via WebSocket | ✅ Produção |
+| **Fairness Monitoring** | Demographic parity, FPR balance | ✅ Produção |
+| **PostgreSQL + pgvector** | Persistência + embeddings faciais | ✅ Produção |
+| **Two-Key Unblur** | score ≥ 0.98 + HITL approve | ✅ Produção |
+| **Alertas Automáticos** | Email + Webhook + SMS | ✅ Produção |
 
 ---
 
@@ -343,8 +356,8 @@ Contribuições são bem-vindas! Por favor:
 
 <div align="center">
 
-**O-olho-de-DEUS v2.0** • 2026
+**O-OLHO-DE-DEUS v3.0.1** • 2026-07-04
 
-*👁️ Tudo vê. Tudo registra. Tudo protege.*
+*👁️ Edge AI • Privacy by Design • Human-in-the-Loop • Forensic Logging*
 
 </div>

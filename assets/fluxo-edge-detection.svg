@@ -1,0 +1,290 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 550">
+  <defs>
+    <style>
+      @keyframes rtsp-flow {
+        0% { stroke-dashoffset: 24; opacity: 0.4; }
+        50% { opacity: 1; }
+        100% { stroke-dashoffset: 0; opacity: 0.4; }
+      }
+      @keyframes ai-process {
+        0%, 100% { filter: drop-shadow(0 0 6px rgba(255,71,87,0.6)); }
+        50% { filter: drop-shadow(0 0 18px rgba(255,71,87,1)); }
+      }
+      @keyframes embed-pulse {
+        0%, 100% { fill: #a855f7; opacity: 1; }
+        50% { fill: #d8b4fe; opacity: 0.7; }
+      }
+      @keyframes blur-shield {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(46,213,115,0.8)); }
+      }
+      @keyframes json-appear {
+        0% { transform: scale(0.8); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes threshold-glow {
+        0%, 100% { filter: drop-shadow(0 0 4px rgba(0,217,255,0.4)); }
+        50% { filter: drop-shadow(0 0 12px rgba(0,217,255,0.9)); }
+      }
+      .rtsp-stream { stroke-dasharray: 8 4; animation: rtsp-flow 1.2s linear infinite; }
+      .ai-box { animation: ai-process 2s ease-in-out infinite; }
+      .embed-dot { animation: embed-pulse 1.5s ease-in-out infinite; }
+      .blur-shield { animation: blur-shield 2.5s ease-in-out infinite; }
+      .json-output { animation: json-appear 0.4s ease-out forwards; }
+      .threshold-meter { animation: threshold-glow 1.8s ease-in-out infinite; }
+    </style>
+    <linearGradient id="rtspGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d9ff"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+    <linearGradient id="yoloGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#ff6b81"/>
+    </linearGradient>
+    <linearGradient id="facenetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="100%" stop-color="#7bed9f"/>
+    </linearGradient>
+    <linearGradient id="jsonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00d9ff"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="brightGlow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1000" height="550" fill="url(#bgGrad)"/>
+
+  <text x="500" y="35" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="20" font-weight="bold">🔍 FLUXO DE DETECÇÃO EDGE v3.0.1</text>
+  <text x="500" y="52" text-anchor="middle" fill="#666" font-family="Segoe UI, Arial" font-size="11">RTSP → YOLOv8-Face → FaceNet → Dynamic Masking → JSON → Cloud</text>
+
+  <!-- Step 1: RTSP Streams -->
+  <g transform="translate(40, 100)">
+    <rect x="0" y="0" width="140" height="140" rx="10" fill="rgba(0,217,255,0.06)" stroke="url(#rtspGrad)" stroke-width="2"/>
+    <text x="70" y="25" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="12" font-weight="bold">📡 STREAMS RTSP</text>
+
+    <!-- Camera feeds -->
+    <g transform="translate(20, 40)">
+      <rect x="0" y="0" width="45" height="35" rx="5" fill="rgba(0,0,0,0.4)" stroke="rgba(0,217,255,0.4)" stroke-width="1"/>
+      <text x="22" y="20" text-anchor="middle" fill="#00d9ff" font-size="14">📹</text>
+      <text x="22" y="32" text-anchor="middle" fill="#aaa" font-size="7">CAM-01</text>
+    </g>
+    <g transform="translate(75, 40)">
+      <rect x="0" y="0" width="45" height="35" rx="5" fill="rgba(0,0,0,0.4)" stroke="rgba(0,217,255,0.4)" stroke-width="1"/>
+      <text x="22" y="20" text-anchor="middle" fill="#00d9ff" font-size="14">📹</text>
+      <text x="22" y="32" text-anchor="middle" fill="#aaa" font-size="7">CAM-02</text>
+    </g>
+    <g transform="translate(20, 85)">
+      <rect x="0" y="0" width="45" height="35" rx="5" fill="rgba(0,0,0,0.4)" stroke="rgba(0,217,255,0.4)" stroke-width="1"/>
+      <text x="22" y="20" text-anchor="middle" fill="#00d9ff" font-size="14">📹</text>
+      <text x="22" y="32" text-anchor="middle" fill="#aaa" font-size="7">CAM-03</text>
+    </g>
+    <g transform="translate(75, 85)">
+      <rect x="0" y="0" width="45" height="35" rx="5" fill="rgba(0,0,0,0.4)" stroke="rgba(0,217,255,0.4)" stroke-width="1"/>
+      <text x="22" y="20" text-anchor="middle" fill="#00d9ff" font-size="14">📹</text>
+      <text x="22" y="32" text-anchor="middle" fill="#aaa" font-size="7">CAM-04</text>
+    </g>
+
+    <!-- Flow arrows -->
+    <path d="M145 50 L165 50" stroke="url(#rtspGrad)" stroke-width="2" class="rtsp-stream"/>
+    <path d="M145 95 L165 95" stroke="url(#rtspGrad)" stroke-width="2" class="rtsp-stream"/>
+    <polygon points="165,50 155,45 155,55" fill="url(#rtspGrad)"/>
+    <polygon points="165,95 155,90 155,100" fill="url(#rtspGrad)"/>
+  </g>
+
+  <!-- Step 2: YOLOv8-Face Detection -->
+  <g transform="translate(220, 100)" class="ai-box">
+    <rect x="0" y="0" width="160" height="140" rx="10" fill="rgba(255,71,87,0.1)" stroke="url(#yoloGrad)" stroke-width="2" filter="url(#brightGlow)"/>
+    <text x="80" y="25" text-anchor="middle" fill="#ff4757" font-family="Segoe UI, Arial" font-size="12" font-weight="bold">🎯 YOLOv8-FACE</text>
+
+    <!-- YOLO icon -->
+    <g transform="translate(80, 55)">
+      <circle r="25" fill="rgba(255,71,87,0.15)" stroke="url(#yoloGrad)" stroke-width="2"/>
+      <circle r="15" fill="none" stroke="rgba(255,71,87,0.4)" stroke-width="1.5" stroke-dasharray="4 2"/>
+      <circle r="5" fill="#ff4757"/>
+    </g>
+
+    <text x="80" y="95" text-anchor="middle" fill="#aaa" font-size="9">Bounding Boxes</text>
+    <text x="80" y="108" text-anchor="middle" fill="#ff6b81" font-size="9" font-weight="bold">confidence >0.70</text>
+    <text x="80" y="125" text-anchor="middle" fill="#888" font-size="8">30 FPS @ 1080p</text>
+  </g>
+
+  <!-- Flow arrow -->
+  <path d="M385 170 L405 170" stroke="url(#yoloGrad)" stroke-width="2" class="rtsp-stream"/>
+  <polygon points="405,170 395,165 395,175" fill="url(#yoloGrad)"/>
+
+  <!-- Step 3: FaceNet Embeddings -->
+  <g transform="translate(420, 100)" class="ai-box" style="animation-delay: 0.3s">
+    <rect x="0" y="0" width="160" height="140" rx="10" fill="rgba(168,85,247,0.1)" stroke="url(#facenetGrad)" stroke-width="2" filter="url(#brightGlow)"/>
+    <text x="80" y="25" text-anchor="middle" fill="#a855f7" font-family="Segoe UI, Arial" font-size="12" font-weight="bold">🧠 FACENET 512</text>
+
+    <!-- Embedding visualization -->
+    <g transform="translate(80, 60)">
+      <!-- 512-dim vector representation -->
+      <rect x="-30" y="-10" width="60" height="20" rx="3" fill="rgba(168,85,247,0.2)" stroke="url(#facenetGrad)" stroke-width="1"/>
+      <!-- Dots representing embedding dimensions -->
+      <circle cx="-25" cy="0" r="3" class="embed-dot"/>
+      <circle cx="-18" cy="0" r="3" class="embed-dot" style="animation-delay: 0.1s"/>
+      <circle cx="-11" cy="0" r="3" class="embed-dot" style="animation-delay: 0.2s"/>
+      <circle cx="-4" cy="0" r="3" class="embed-dot" style="animation-delay: 0.3s"/>
+      <circle cx="3" cy="0" r="3" class="embed-dot" style="animation-delay: 0.4s"/>
+      <circle cx="10" cy="0" r="3" class="embed-dot" style="animation-delay: 0.5s"/>
+      <circle cx="17" cy="0" r="3" class="embed-dot" style="animation-delay: 0.6s"/>
+      <circle cx="24" cy="0" r="3" class="embed-dot" style="animation-delay: 0.7s"/>
+      <text x="0" y="18" text-anchor="middle" fill="#a855f7" font-size="7">[512 floats]</text>
+    </g>
+
+    <text x="80" y="105" text-anchor="middle" fill="#aaa" font-size="9">Face Embedding</text>
+    <text x="80" y="125" text-anchor="middle" fill="#888" font-size="8">FaceNet / ArcFace</text>
+  </g>
+
+  <!-- Flow arrow -->
+  <path d="M585 170 L605 170" stroke="url(#facenetGrad)" stroke-width="2" class="rtsp-stream"/>
+  <polygon points="605,170 595,165 595,175" fill="url(#facenetGrad)"/>
+
+  <!-- Step 4: Dynamic Masking -->
+  <g transform="translate(620, 100)" class="blur-shield">
+    <rect x="0" y="0" width="160" height="140" rx="10" fill="rgba(46,213,115,0.1)" stroke="url(#shieldGrad)" stroke-width="2"/>
+    <text x="80" y="25" text-anchor="middle" fill="#2ed573" font-family="Segoe UI, Arial" font-size="12" font-weight="bold">🔒 DYNAMIC MASKING</text>
+
+    <!-- Before/After visualization -->
+    <g transform="translate(25, 45)">
+      <!-- Before (clear) -->
+      <rect x="0" y="0" width="45" height="35" rx="4" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <circle cx="22" cy="15" r="8" fill="rgba(255,255,255,0.6)"/>
+      <text x="22" y="32" text-anchor="middle" fill="#888" font-size="6">RAW</text>
+
+      <!-- Arrow -->
+      <path d="M50 17 L60 17" stroke="#2ed573" stroke-width="2"/>
+      <polygon points="60,17 55,14 55,20" fill="#2ed573"/>
+
+      <!-- After (blurred) -->
+      <rect x="65" y="0" width="45" height="35" rx="4" fill="rgba(46,213,115,0.15)" stroke="url(#shieldGrad)" stroke-width="1.5"/>
+      <circle cx="87" cy="15" r="8" fill="rgba(46,213,115,0.4)"/>
+      <!-- Blur effect -->
+      <circle cx="87" cy="15" r="8" fill="none" stroke="rgba(46,213,115,0.3)" stroke-width="2" stroke-dasharray="2 2"/>
+      <text x="87" y="32" text-anchor="middle" fill="#2ed573" font-size="6">BLUR</text>
+    </g>
+
+    <text x="80" y="105" text-anchor="middle" fill="#aaa" font-size="8">Gaussian Blur σ=99</text>
+    <text x="80" y="120" text-anchor="middle" fill="#2ed573" font-size="8" font-weight="bold">Privacy by Design</text>
+  </g>
+
+  <!-- Flow arrow to output -->
+  <path d="M785 170 L805 170" stroke="url(#shieldGrad)" stroke-width="2" class="rtsp-stream"/>
+  <polygon points="805,170 795,165 795,175" fill="url(#shieldGrad)"/>
+
+  <!-- Step 5: JSON Output -->
+  <g transform="translate(820, 100)">
+    <rect x="0" y="0" width="150" height="140" rx="10" fill="rgba(0,217,255,0.08)" stroke="url(#jsonGrad)" stroke-width="2"/>
+    <text x="75" y="25" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="12" font-weight="bold">📄 METADATA JSON</text>
+
+    <!-- JSON structure -->
+    <g transform="translate(15, 45)" font-family="Consolas, monospace" font-size="7">
+      <text x="0" y="0" fill="#a855f7">{</text>
+      <text x="10" y="12" fill="#2ed573">"timestamp"</text>
+      <text x="70" y="12" fill="#aaa">: "2026-07-04T...</text>
+      <text x="10" y="24" fill="#2ed573">"camera_id"</text>
+      <text x="75" y="24" fill="#ffa502">: "CAM-01"</text>
+      <text x="10" y="36" fill="#2ed573">"edge_node"</text>
+      <text x="75" y="36" fill="#aaa">: "edge-01"</text>
+      <text x="10" y="48" fill="#2ed573">"faces"</text>
+      <text x="45" y="48" fill="#aaa">: [</text>
+      <text x="20" y="60" fill="#aaa">{</text>
+      <text x="30" y="72" fill="#888">"bbox": [x,y,w,h],</text>
+      <text x="30" y="84" fill="#888">"embedding": [512],</text>
+      <text x="30" y="96" fill="#888">"conf": 0.97</text>
+      <text x="20" y="108" fill="#aaa">}</text>
+      <text x="45" y="120" fill="#a855f7">]</text>
+      <text x="0" y="132" fill="#a855f7">}</text>
+    </g>
+  </g>
+
+  <!-- Bottom section: Decision Flow -->
+  <g transform="translate(200, 280)">
+    <rect x="0" y="0" width="580" height="180" rx="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <text x="290" y="25" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="13" font-weight="bold">⚖️ DECISÃO E_THRESHOLD</text>
+
+    <!-- Threshold meter -->
+    <g transform="translate(50, 50)">
+      <text x="0" y="0" fill="#888" font-size="10">Threshold Config:</text>
+      <rect x="0" y="10" width="200" height="30" rx="5" fill="rgba(0,0,0,0.3)" stroke="url(#jsonGrad)" stroke-width="1.5" class="threshold-meter"/>
+
+      <!-- Scale -->
+      <line x1="10" y1="25" x2="190" y2="25" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+
+      <!-- Zones -->
+      <rect x="10" y="22" width="50" height="6" fill="rgba(46,213,115,0.6)"/>
+      <rect x="60" y="22" width="50" height="6" fill="rgba(255,165,2,0.6)"/>
+      <rect x="110" y="22" width="40" height="6" fill="rgba(255,71,87,0.6)"/>
+      <rect x="150" y="22" width="40" height="6" fill="rgba(255,71,87,0.9)"/>
+
+      <!-- Labels -->
+      <text x="10" y="38" fill="#2ed573" font-size="8">LOW</text>
+      <text x="60" y="38" fill="#ffa502" font-size="8">MED</text>
+      <text x="110" y="38" fill="#ff4757" font-size="8">HIGH</text>
+      <text x="150" y="38" fill="#ff6b81" font-size="8">CRIT</text>
+
+      <!-- Current position -->
+      <circle cx="130" cy="25" r="5" fill="#fff" filter="url(#brightGlow)">
+        <animate attributeName="cx" values="130;135;130" dur="2s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- Decision paths -->
+    <g transform="translate(300, 50)">
+      <!-- Normal path -->
+      <g>
+        <rect x="0" y="0" width="120" height="50" rx="8" fill="rgba(46,213,115,0.1)" stroke="url(#shieldGrad)" stroke-width="1.5"/>
+        <text x="60" y="20" text-anchor="middle" fill="#2ed573" font-size="10" font-weight="bold">✅ <0.50</text>
+        <text x="60" y="35" text-anchor="middle" fill="#aaa" font-size="8">Drop frame</text>
+      </g>
+
+      <!-- Alert path -->
+      <g transform="translate(135, 0)">
+        <rect x="0" y="0" width="120" height="50" rx="8" fill="rgba(255,71,87,0.15)" stroke="url(#yoloGrad)" stroke-width="1.5"/>
+        <text x="60" y="20" text-anchor="middle" fill="#ff4757" font-size="10" font-weight="bold">🚨 ≥0.85</text>
+        <text x="60" y="35" text-anchor="middle" fill="#aaa" font-size="8">→ Cloud + HITL</text>
+      </g>
+    </g>
+
+    <!-- Hitl info -->
+    <g transform="translate(50, 120)">
+      <rect x="0" y="0" width="510" height="50" rx="8" fill="rgba(0,217,255,0.06)" stroke="rgba(0,217,255,0.3)" stroke-width="1"/>
+      <text x="20" y="20" fill="#00d9ff" font-size="10" font-weight="bold">🔐 Two-Key Unblur:</text>
+      <g transform="translate(20, 32)" font-size="8" fill="#aaa">
+        <text x="0" y="0">Chave 1: alarm_score ≥ 0.98</text>
+        <text x="170" y="0">Chave 2: HITL approve</text>
+        <text x="340" y="0"> ≫ Desofusca ROI</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Performance metrics -->
+  <g transform="translate(20, 490)">
+    <rect x="0" y="0" width="960" height="45" rx="8" fill="rgba(0,217,255,0.04)" stroke="rgba(0,217,255,0.2)" stroke-width="1"/>
+    <text x="20" y="28" fill="#00d9ff" font-size="10" font-weight="bold">⚡ PERFORMANCE EDGE:</text>
+    <text x="140" y="28" fill="#2ed573" font-size="10"><tspan font-weight="bold">30 FPS</tspan> @ 1080p |</text>
+    <text x="240" y="28" fill="#ffa502" font-size="10"><tspan font-weight="bold">~33ms</tspan> latency |</text>
+    <text x="350" y="28" fill="#a855f7" font-size="10"><tspan font-weight="bold">512-dim</tspan> embeddings |</text>
+    <text x="480" y="28" fill="#2ed573" font-size="10"><tspan font-weight="bold">0</tspan> frames brutos na nuvem |</text>
+    <text x="620" y="28" fill="#ff4757" font-size="10"><tspan font-weight="bold">99%</tspan> menor banda |</text>
+    <text x="750" y="28" fill="#00d9ff" font-size="10"><tspan font-weight="bold">4-8</tspan> câmeras/thread</text>
+  </g>
+
+  <text x="500" y="540" text-anchor="middle" fill="#444" font-family="Segoe UI, Arial" font-size="9">O-OLHO-DE-DEUS v3.0.1 | Edge AI Pipeline | 2026-07-04</text>
+</svg>

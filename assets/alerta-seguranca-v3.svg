@@ -1,0 +1,253 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650">
+  <defs>
+    <style>
+      @keyframes alert-pulse {
+        0%, 100% { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,71,87,0.8)); }
+        50% { opacity: 0.7; filter: drop-shadow(0 0 30px rgba(255,71,87,1)); }
+      }
+      @keyframes siren-rotate {
+        0% { transform: rotate(-10deg); }
+        50% { transform: rotate(10deg); }
+        100% { transform: rotate(-10deg); }
+      }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+      }
+      @keyframes blink-fast {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+      @keyframes progress-fill {
+        0% { width: 0%; }
+        100% { width: 100%; }
+      }
+      @keyframes hitl-appear {
+        0% { transform: scale(0.95); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .alert-container { animation: alert-pulse 0.8s ease-in-out infinite; }
+      .siren { animation: siren-rotate 0.3s ease-in-out infinite; transform-origin: bottom center; }
+      .shake-effect { animation: shake 0.1s ease-in-out infinite; }
+      .blink-fast { animation: blink-fast 0.5s ease-in-out infinite; }
+      .hitl-panel { animation: hitl-appear 0.5s ease-out forwards; }
+    </style>
+    <linearGradient id="alertBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2d0a0a"/>
+      <stop offset="100%" stop-color="#4a0a0a"/>
+    </linearGradient>
+    <linearGradient id="dangerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#ff6b81"/>
+    </linearGradient>
+    <linearGradient id="btnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff6b81"/>
+      <stop offset="100%" stop-color="#ff4757"/>
+    </linearGradient>
+    <linearGradient id="successGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="100%" stop-color="#7bed9f"/>
+    </linearGradient>
+    <linearGradient id="sirenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="50%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#8b0000"/>
+    </linearGradient>
+    <filter id="intenseGlow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1000" height="650" fill="url(#alertBgGrad)" class="shake-effect"/>
+
+  <text x="500" y="35" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="18" font-weight="bold">🚨 FLUXO DE ALERTA v3.0.1</text>
+  <text x="500" y="52" text-anchor="middle" fill="#ff6b81" font-family="Segoe UI, Arial" font-size="11">Detecção → Edge AI → Threshold → HITL → Notificação</text>
+
+  <!-- Rotating Sirens -->
+  <g transform="translate(60, 80)">
+    <g class="siren">
+      <path d="M-20,0 L20,0 L12,-35 L-12,-35 Z" fill="url(#sirenGrad)" filter="url(#intenseGlow)"/>
+      <circle cx="0" cy="-30" r="10" fill="#ff4757" class="blink-fast"/>
+    </g>
+  </g>
+
+  <g transform="translate(940, 80)">
+    <g class="siren">
+      <path d="M-20,0 L20,0 L12,-35 L-12,-35 Z" fill="url(#sirenGrad)" filter="url(#intenseGlow)"/>
+      <circle cx="0" cy="-30" r="10" fill="#ff4757" class="blink-fast"/>
+    </g>
+  </g>
+
+  <!-- Alert flow diagram -->
+  <g transform="translate(100, 100)">
+    <!-- Step 1: Detection -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="140" height="80" rx="10" fill="rgba(0,217,255,0.1)" stroke="url(#dangerGrad)" stroke-width="2"/>
+      <text x="70" y="30" text-anchor="middle" fill="#ff4757" font-size="24">📹</text>
+      <text x="70" y="55" text-anchor="middle" fill="#ff4757" font-size="11" font-weight="bold">DET ECÇÃO</text>
+      <text x="70" y="70" text-anchor="middle" fill="#aaa" font-size="9">YOLOv8-Face</text>
+    </g>
+
+    <!-- Arrow -->
+    <path d="M145 40 L175 40" stroke="url(#dangerGrad)" stroke-width="3" stroke-dasharray="8 4"/>
+    <polygon points="175,40 165,35 165,45" fill="url(#dangerGrad)"/>
+
+    <!-- Step 2: Edge AI -->
+    <g transform="translate(180, 0)">
+      <rect x="0" y="0" width="140" height="80" rx="10" fill="rgba(168,85,247,0.1)" stroke="url(#dangerGrad)" stroke-width="2" class="alert-container"/>
+      <text x="70" y="30" text-anchor="middle" fill="#a855f7" font-size="24">🧠</text>
+      <text x="70" y="55" text-anchor="middle" fill="#a855f7" font-size="11" font-weight="bold">EDGE AI</text>
+      <text x="70" y="70" text-anchor="middle" fill="#aaa" font-size="9">FaceNet 512-dim</text>
+    </g>
+
+    <!-- Arrow -->
+    <path d="M325 40 L355 40" stroke="url(#dangerGrad)" stroke-width="3" stroke-dasharray="8 4"/>
+    <polygon points="355,40 345,35 345,45" fill="url(#dangerGrad)"/>
+
+    <!-- Step 3: Threshold -->
+    <g transform="translate(360, 0)">
+      <rect x="0" y="0" width="140" height="80" rx="10" fill="rgba(255,165,2,0.1)" stroke="url(#dangerGrad)" stroke-width="2"/>
+      <text x="70" y="30" text-anchor="middle" fill="#ffa502" font-size="24">⚖️</text>
+      <text x="70" y="55" text-anchor="middle" fill="#ffa502" font-size="11" font-weight="bold">THRESHOLD</text>
+      <text x="70" y="70" text-anchor="middle" fill="#aaa" font-size="9">score ≥ 0.85</text>
+    </g>
+
+    <!-- Arrow -->
+    <path d="M505 40 L535 40" stroke="url(#dangerGrad)" stroke-width="3" stroke-dasharray="8 4"/>
+    <polygon points="535,40 525,35 525,45" fill="url(#dangerGrad)"/>
+
+    <!-- Step 4: HITL -->
+    <g transform="translate(540, 0)" class="hitl-panel">
+      <rect x="0" y="0" width="140" height="80" rx="10" fill="rgba(46,213,115,0.1)" stroke="url(#successGrad)" stroke-width="2" filter="url(#intenseGlow)"/>
+      <text x="70" y="30" text-anchor="middle" fill="#2ed573" font-size="24">👤</text>
+      <text x="70" y="55" text-anchor="middle" fill="#2ed573" font-size="11" font-weight="bold">HITL REVIEW</text>
+      <text x="70" y="70" text-anchor="middle" fill="#aaa" font-size="9">Operador valida</text>
+    </g>
+
+    <!-- Arrow -->
+    <path d="M685 40 L715 40" stroke="url(#successGrad)" stroke-width="3" stroke-dasharray="8 4"/>
+    <polygon points="715,40 705,35 705,45" fill="url(#successGrad)"/>
+
+    <!-- Step 5: Notification -->
+    <g transform="translate(720, 0)">
+      <rect x="0" y="0" width="140" height="80" rx="10" fill="rgba(255,71,87,0.15)" stroke="url(#dangerGrad)" stroke-width="2" filter="url(#intenseGlow)"/>
+      <text x="70" y="30" text-anchor="middle" fill="#ff4757" font-size="24">🔔</text>
+      <text x="70" y="55" text-anchor="middle" fill="#ff4757" font-size="11" font-weight="bold">NOTIFICA</text>
+      <text x="70" y="70" text-anchor="middle" fill="#aaa" font-size="9">Authorities + Logs</text>
+    </g>
+  </g>
+
+  <!-- Alert Modal -->
+  <g transform="translate(250, 220)" class="hitl-panel">
+    <rect x="0" y="0" width="500" height="300" rx="15" fill="rgba(20,20,30,0.95)" stroke="url(#dangerGrad)" stroke-width="3" filter="url(#intenseGlow)"/>
+
+    <!-- Modal Header -->
+    <rect x="0" y="0" width="500" height="60" rx="15" fill="url(#dangerGrad)"/>
+    <rect x="0" y="45" width="500" height="15" fill="rgba(20,20,30,0.95)"/>
+    <text x="250" y="38" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="18" font-weight="bold">⚠️ INCIDENTE REGISTRADO</text>
+
+    <!-- Incident Details -->
+    <g transform="translate(30, 80)" font-family="Segoe UI, Arial">
+      <text x="0" y="0" fill="#888" font-size="10">ID DO INCIDENTE:</text>
+      <text x="0" y="18" fill="#00d9ff" font-family="Consolas, monospace" font-size="13" font-weight="bold">INC-2026070445-A7B3</text>
+
+      <text x="0" y="45" fill="#888" font-size="10">TIMESTAMP:</text>
+      <text x="0" y="63" fill="#2ed573" font-family="Consolas, monospace" font-size="13">2026-07-04 14:32:18 UTC</text>
+
+      <text x="250" y="0" fill="#888" font-size="10">CÂMERA:</text>
+      <text x="250" y="18" fill="#ffa502" font-family="Consolas, monospace" font-size="13" font-weight="bold">CAM-03</text>
+
+      <text x="250" y="45" fill="#888" font-size="10">PESSOAS:</text>
+      <text x="250" y="63" fill="#ff4757" font-family="Consolas, monospace" font-size="13" font-weight="bold">12 detectadas</text>
+    </g>
+
+    <!-- Threat Level -->
+    <g transform="translate(30, 165)">
+      <text x="0" y="0" fill="#888" font-size="10">NÍVEL DE AMEAÇA:</text>
+      <rect x="0" y="12" width="200" height="18" rx="9" fill="rgba(255,255,255,0.1)"/>
+      <rect x="0" y="12" width="170" height="18" rx="9" fill="url(#dangerGrad)">
+        <animate attributeName="width" values="160;170;160" dur="1s" repeatCount="indefinite"/>
+      </rect>
+      <text x="185" y="26" fill="#ff4757" font-size="14" font-weight="bold">ALTO</text>
+    </g>
+
+    <!-- Alarm Score -->
+    <g transform="translate(260, 165)">
+      <text x="0" y="0" fill="#888" font-size="10">ALARM SCORE:</text>
+      <text x="120" y="0" fill="#ff4757" font-family="Consolas, monospace" font-size="16" font-weight="bold">0.94</text>
+    </g>
+
+    <!-- Actions -->
+    <g transform="translate(30, 200)">
+      <text x="0" y="0" fill="#888" font-size="10">AÇÕES AUTOMÁTICAS:</text>
+
+      <g transform="translate(0, 12)">
+        <circle cx="6" cy="6" r="6" fill="url(#successGrad)"/>
+        <path d="M3,6 L5,8 L9,4" stroke="white" stroke-width="2" fill="none"/>
+        <text x="18" y="10" fill="#2ed573" font-size="10">📸 Frame borrado salvo (S3)</text>
+      </g>
+
+      <g transform="translate(0, 32)">
+        <circle cx="6" cy="6" r="6" fill="url(#successGrad)"/>
+        <path d="M3,6 L5,8 L9,4" stroke="white" stroke-width="2" fill="none"/>
+        <text x="18" y="10" fill="#2ed573" font-size="10">📧 Email segurança enviado</text>
+      </g>
+
+      <g transform="translate(0, 52)">
+        <circle cx="6" cy="6" r="6" fill="url(#dangerGrad)" class="blink-fast"/>
+        <text x="18" y="10" fill="#ffa502" font-size="10">⏳ Aguardando HITL...</text>
+      </g>
+    </g>
+
+    <!-- Forensic badge -->
+    <g transform="translate(320, 260)">
+      <rect x="0" y="0" width="150" height="28" rx="6" fill="rgba(168,85,247,0.15)" stroke="url(#dangerGrad)" stroke-width="1.5"/>
+      <text x="20" y="18" fill="#a855f7" font-size="10" font-weight="bold">🌳 Merkle: batch_047</text>
+    </g>
+
+    <!-- TSA badge -->
+    <g transform="translate(320, 290)">
+      <rect x="0" y="0" width="140" height="20" rx="5" fill="rgba(255,165,2,0.1)" stroke="rgba(255,165,2,0.4)" stroke-width="1"/>
+      <text x="15" y="13" fill="#ffa502" font-size="9">🔏 TSA: RFC3161</text>
+    </g>
+  </g>
+
+  <!-- Bottom stats -->
+  <g transform="translate(100, 550)">
+    <rect x="0" y="0" width="800" height="70" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <text x="20" y="25" fill="#00d9ff" font-size="12" font-weight="bold">⚡ MÉTRICAS DE ALERTA</text>
+
+    <g transform="translate(40, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">Tempo Detecção:</text>
+      <text x="85" y="0" fill="#2ed573" font-size="11" font-weight="bold">~33ms</text>
+    </g>
+    <g transform="translate(170, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">Threshold:</text>
+      <text x="60" y="0" fill="#ffa502" font-size="11" font-weight="bold">0.85</text>
+    </g>
+    <g transform="translate(270, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">HITL Review:</text>
+      <text x="80" y="0" fill="#00d9ff" font-size="11" font-weight="bold">~23s médio</text>
+    </g>
+    <g transform="translate(410, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">True Positives (24h):</text>
+      <text x="130" y="0" fill="#2ed573" font-size="11" font-weight="bold">8</text>
+    </g>
+    <g transform="translate(520, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">False Positives:</text>
+      <text x="110" y="0" fill="#ff4757" font-size="11" font-weight="bold">34</text>
+    </g>
+    <g transform="translate(660, 40)">
+      <text x="0" y="0" fill="#888" font-size="9">Precisão:</text>
+      <text x="60" y="0" fill="#ffa502" font-size="11" font-weight="bold">19%</text>
+    </g>
+  </g>
+
+  <text x="500" y="640" text-anchor="middle" fill="#444" font-size="10">O-OLHO-DE-DEUS v3.0.1 | Alert Pipeline | 2026-07-04</text>
+</svg>

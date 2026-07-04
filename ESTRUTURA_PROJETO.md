@@ -83,6 +83,13 @@ olho-de-deus-corrigido/
 │   ├── setup_postgres.sql             # Script de criação do banco
 │   └── organizar.bat                  # Script de organização LEGADO
 │
+├── 🎨 ASSETS (Diagramas SVG Animados)
+│   ├── README.md                      # Documentação dos diagramas
+│   ├── arquitetura-edge-cloud.svg     # Arquitetura Edge-to-Cloud
+│   ├── fluxo-edge-detection.svg       # Pipeline de detecção Edge AI
+│   ├── dashboard-hitl.svg             # Interface HITL Dashboard
+│   └── alerta-seguranca-v3.svg        # Fluxo de alerta
+│
 ├── 📝 ENTRY POINTS
 │   ├── main.py                        # Entry point principal
 │   └── -m src.hitl.dashboard_server   # API server

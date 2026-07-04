@@ -1,0 +1,272 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600">
+  <defs>
+    <style>
+      @keyframes alert-pulse {
+        0%, 100% { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,71,87,0.8)); }
+        50% { opacity: 0.6; filter: drop-shadow(0 0 20px rgba(255,71,87,1)); }
+      }
+      @keyframes websocket-blink {
+        0%, 100% { fill: #2ed573; opacity: 1; }
+        50% { fill: #7bed9f; opacity: 0.7; }
+      }
+      @keyframes modal-slide {
+        0% { transform: translateY(-10px); opacity: 0.9; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes spinner-rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes decision-flash {
+        0%, 100% { opacity: 0.7; }
+        50% { opacity: 1; filter: drop-shadow(0 0 8px currentColor); }
+      }
+      .alert-badge { animation: alert-pulse 1s ease-in-out infinite; }
+      .ws-status { animation: websocket-blink 2s ease-in-out infinite; }
+      .alert-modal { animation: modal-slide 0.4s ease-out forwards; }
+      .spinner { animation: spinner-rotate 1s linear infinite; transform-origin: center; }
+      .approve-btn { animation: decision-flash 2s ease-in-out infinite; color: #2ed573; }
+      .dismiss-btn { animation: decision-flash 2s ease-in-out infinite; color: #ff4757; animation-delay: 0.5s; }
+    </style>
+    <linearGradient id="dashGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b263b"/>
+      <stop offset="100%" stop-color="#0d1b2a"/>
+    </linearGradient>
+    <linearGradient id="alertGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#ff6b81"/>
+    </linearGradient>
+    <linearGradient id="successGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="100%" stop-color="#7bed9f"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d9ff"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1000" height="600" fill="url(#bgGrad)"/>
+
+  <text x="500" y="35" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="20" font-weight="bold">🖥️ HITL DASHBOARD v3.0.1</text>
+  <text x="500" y="52" text-anchor="middle" fill="#666" font-family="Segoe UI, Arial" font-size="11">Triagem humana em tempo real via WebSocket</text>
+
+  <!-- Dashboard Layout -->
+  <g transform="translate(20, 70)">
+    <!-- Main video/alert area -->
+    <rect x="0" y="0" width="620" height="400" rx="10" fill="url(#dashGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="2"/>
+
+    <!-- Header bar -->
+    <rect x="0" y="0" width="620" height="40" rx="10" fill="rgba(0,0,0,0.3)"/>
+    <rect x="0" y="25" width="620" height="15" fill="rgba(0,0,0,0.3)"/>
+    <text x="20" y="28" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="13" font-weight="bold">👁️ O-OLHO-DE-DEUS | HITL</text>
+
+    <!-- WebSocket status -->
+    <g transform="translate(480, 10)">
+      <circle cx="8" cy="8" r="8" class="ws-status"/>
+      <text x="22" y="12" fill="#2ed573" font-family="Segoe UI, Arial" font-size="10" font-weight="bold">WebSocket Connected</text>
+      <text x="22" y="24" fill="#666" font-family="Consolas, monospace" font-size="8">ws://localhost:8000/ws/alerts</text>
+    </g>
+
+    <!-- Alert Modal (centered) -->
+    <g transform="translate(110, 80)" class="alert-modal">
+      <rect x="0" y="0" width="400" height="260" rx="12" fill="rgba(20,20,30,0.95)" stroke="url(#alertGrad)" stroke-width="2" filter="url(#glow)"/>
+
+      <!-- Modal header -->
+      <rect x="0" y="0" width="400" height="50" rx="12" fill="url(#alertGrad)"/>
+      <rect x="0" y="35" width="400" height="15" fill="rgba(20,20,30,0.95)"/>
+      <text x="200" y="30" text-anchor="middle" fill="white" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">⚠️ ALERTA DE SEGURANÇA</text>
+
+      <!-- Alert ID -->
+      <g transform="translate(20, 65)">
+        <text x="0" y="0" fill="#888" font-family="Segoe UI, Arial" font-size="9">ID DO INCIDENTE:</text>
+        <text x="0" y="15" fill="#00d9ff" font-family="Consolas, monospace" font-size="12" font-weight="bold">INC-2026070445-A7B3</text>
+      </g>
+
+      <!-- Timestamp -->
+      <g transform="translate(220, 65)">
+        <text x="0" y="0" fill="#888" font-family="Segoe UI, Arial" font-size="9">TIMESTAMP:</text>
+        <text x="0" y="15" fill="#2ed573" font-family="Consolas, monospace" font-size="12">2026-07-04 14:32:18 UTC</text>
+      </g>
+
+      <!-- Camera info -->
+      <g transform="translate(20, 95)">
+        <text x="0" y="0" fill="#888" font-family="Segoe UI, Arial" font-size="9">CÂMERA:</text>
+        <text x="60" y="0" fill="#ffa502" font-family="Consolas, monospace" font-size="12" font-weight="bold">CAM-03</text>
+        <text x="120" y="0" fill="#888" font-size="9">| FACES:</text>
+        <text x="170" y="0" fill="#ff4757" font-family="Consolas, monospace" font-size="12" font-weight="bold">12</text>
+      </g>
+
+      <!-- Blurred frame placeholder -->
+      <g transform="translate(20, 115)">
+        <rect x="0" y="0" width="200" height="110" rx="6" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <!-- Blur effect simulation -->
+        <rect x="10" y="10" width="80" height="60" rx="4" fill="rgba(100,100,120,0.3)"/>
+        <circle cx="50" cy="40" r="15" fill="rgba(100,100,120,0.5)" filter="blur(4px)"/>
+        <circle cx="140" cy="30" r="12" fill="rgba(100,100,120,0.4)" filter="blur(3px)"/>
+        <circle cx="160" cy="70" r="10" fill="rgba(100,100,120,0.4)" filter="blur(3px)"/>
+        <text x="100" y="95" text-anchor="middle" fill="#666" font-size="8">🔒 Frame borrado (Privacy by Design)</text>
+      </g>
+
+      <!-- Threat level -->
+      <g transform="translate(240, 115)">
+        <text x="0" y="0" fill="#888" font-size="9">NÍVEL DE AMEAÇA:</text>
+        <rect x="0" y="10" width="140" height="16" rx="8" fill="rgba(255,255,255,0.1)"/>
+        <rect x="0" y="10" width="120" height="16" rx="8" fill="url(#alertGrad)">
+          <animate attributeName="width" values="110;120;110" dur="1s" repeatCount="indefinite"/>
+        </rect>
+        <text x="130" y="23" fill="#ff4757" font-size="11" font-weight="bold">ALTO</text>
+
+        <!-- Alarm score -->
+        <text x="0" y="45" fill="#888" font-size="9">ALARM SCORE:</text>
+        <text x="100" y="45" fill="#ff4757" font-family="Consolas, monospace" font-size="14" font-weight="bold">0.94</text>
+      </g>
+
+      <!-- Behavior indicators -->
+      <g transform="translate(20, 230)">
+        <text x="0" y="0" fill="#888" font-size="9">INDICADORES:</text>
+        <text x="0" y="14" fill="#ffa502" font-size="9">• Aglomeração súbita (12 pessoas)</text>
+        <text x="0" y="26" fill="#ffa502" font-size="9">• Movimento circulatório intenso</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Side Panel -->
+  <g transform="translate(660, 70)">
+    <rect x="0" y="0" width="320" height="400" rx="10" fill="url(#dashGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="2"/>
+    <text x="160" y="30" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">📊 FILA DE ALERTAS</text>
+
+    <!-- Alert queue items -->
+    <g transform="translate(15, 50)">
+      <!-- Active alert (highlighted) -->
+      <rect x="0" y="0" width="290" height="70" rx="8" fill="rgba(255,71,87,0.15)" stroke="url(#alertGrad)" stroke-width="2"/>
+      <text x="20" y="25" fill="#ff4757" font-family="Consolas, monospace" font-size="11" font-weight="bold">INC-2026070445-A7B3</text>
+      <text x="20" y="45" fill="#aaa" font-size="9">CAM-03 | 14:32:18 | Score: 0.94</text>
+      <text x="20" y="60" fill="#ffa502" font-size="9">⏳ Aguardando revisão...</text>
+      <circle cx="270" cy="35" r="5" class="alert-badge" fill="#ff4757"/>
+    </g>
+
+    <!-- Pending alerts -->
+    <g transform="translate(15, 130)">
+      <rect x="0" y="0" width="290" height="50" rx="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+      <text x="20" y="20" fill="#aaa" font-family="Consolas, monospace" font-size="10">INC-2026070442-C9D1</text>
+      <text x="20" y="38" fill="#888" font-size="9">CAM-01 | 14:28:05 | Score: 0.87</text>
+      <text x="200" y="30" fill="#666" font-size="9">2 na fila</text>
+    </g>
+
+    <g transform="translate(15, 190)">
+      <rect x="0" y="0" width="290" height="50" rx="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+      <text x="20" y="20" fill="#aaa" font-family="Consolas, monospace" font-size="10">INC-2026070438-E2F4</text>
+      <text x="20" y="38" fill="#888" font-size="9">CAM-02 | 14:22:33 | Score: 0.79</text>
+    </g>
+
+    <!-- Statistics -->
+    <g transform="translate(15, 270)">
+      <text x="0" y="0" fill="#00d9ff" font-size="12" font-weight="bold">📈 ESTATÍSTICAS (24h)</text>
+
+      <g transform="translate(0, 20)">
+        <text x="0" y="0" fill="#888" font-size="9">Total Alertas:</text>
+        <text x="100" y="0" fill="#00d9ff" font-size="11" font-weight="bold">47</text>
+      </g>
+      <g transform="translate(0, 40)">
+        <text x="0" y="0" fill="#888" font-size="9">Revisados (HITL):</text>
+        <text x="120" y="0" fill="#2ed573" font-size="11" font-weight="bold">42</text>
+      </g>
+      <g transform="translate(0, 60)">
+        <text x="0" y="0" fill="#888" font-size="9">Escalonados:</text>
+        <text x="100" y="0" fill="#ff4757" font-size="11" font-weight="bold">8</text>
+      </g>
+      <g transform="translate(0, 80)">
+        <text x="0" y="0" fill="#888" font-size="9">Descartados:</text>
+        <text x="100" y="0" fill="#ffa502" font-size="11" font-weight="bold">34</text>
+      </g>
+      <g transform="translate(150, 20)">
+        <text x="0" y="0" fill="#888" font-size="9">Tempo médio:</text>
+        <text x="110" y="0" fill="#00d9ff" font-size="11" font-weight="bold">23s</text>
+      </g>
+    </g>
+
+    <!-- Fairness widget -->
+    <g transform="translate(15, 340)">
+      <rect x="0" y="0" width="290" height="50" rx="8" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.3)" stroke-width="1"/>
+      <text x="10" y="15" fill="#a855f7" font-size="10" font-weight="bold">⚖️ FAIRNESS MONITOR</text>
+      <text x="10" y="32" fill="#888" font-size="8">Dem. Parity: 0.94 ✓ | FPR: 0.08 ✓</text>
+    </g>
+  </g>
+
+  <!-- Bottom Action Bar -->
+  <g transform="translate(20, 485)">
+    <rect x="0" y="0" width="960" height="95" rx="10" fill="url(#dashGrad)" stroke="rgba(0,217,255,0.3)" stroke-width="2"/>
+
+    <!-- Decision buttons -->
+    <g transform="translate(30, 20)">
+      <text x="0" y="-5" fill="#888" font-size="10">AÇÕES:</text>
+
+      <!-- Approve/Escalate -->
+      <rect x="0" y="5" width="140" height="50" rx="8" fill="rgba(46,213,115,0.15)" stroke="url(#successGrad)" stroke-width="2" class="approve-btn"/>
+      <text x="70" y="25" text-anchor="middle" fill="#2ed573" font-size="12" font-weight="bold">✓ ESCALAR</text>
+      <text x="70" y="42" text-anchor="middle" fill="#666" font-size="8">Notificar authorities</text>
+
+      <!-- Dismiss -->
+      <rect x="160" y="5" width="140" height="50" rx="8" fill="rgba(255,71,87,0.15)" stroke="url(#alertGrad)" stroke-width="2" class="dismiss-btn"/>
+      <text x="230" y="25" text-anchor="middle" fill="#ff4757" font-size="12" font-weight="bold">✗ DESCARTAR</text>
+      <text x="230" y="42" text-anchor="middle" fill="#666" font-size="8">Falso positivo</text>
+
+      <!-- View logs -->
+      <rect x="320" y="5" width="120" height="50" rx="8" fill="rgba(0,217,255,0.1)" stroke="url(#cyanGrad)" stroke-width="1.5"/>
+      <text x="380" y="25" text-anchor="middle" fill="#00d9ff" font-size="11" font-weight="bold">📋 VER LOGS</text>
+      <text x="380" y="42" text-anchor="middle" fill="#666" font-size="8">Forensic</text>
+
+      <!-- Unblur (conditional) -->
+      <rect x="460" y="5" width="140" height="50" rx="8" fill="rgba(255,165,2,0.08)" stroke="rgba(255,165,2,0.4)" stroke-width="1.5"/>
+      <text x="530" y="20" text-anchor="middle" fill="#ffa502" font-size="10" font-weight="bold">🔓 UNBLUR</text>
+      <text x="530" y="35" text-anchor="middle" fill="#666" font-size="7">Requer score≥0.98 + HITL</text>
+    </g>
+
+    <!-- Operator info -->
+    <g transform="translate(650, 25)">
+      <text x="0" y="0" fill="#888" font-size="10">OPERADOR:</text>
+      <text x="70" y="0" fill="#00d9ff" font-size="11" font-weight="bold">opr_silva</text>
+      <circle cx="180" cy="-4" r="6" class="ws-status" fill="#2ed573"/>
+      <text x="195" y="0" fill="#888" font-size="10">Session: 2h34m</text>
+
+      <!-- Merkle status -->
+      <g transform="translate(0, 25)">
+        <text x="0" y="0" fill="#a855f7" font-size="9">🌳 Merkle Batch:</text>
+        <text x="85" y="0" fill="#aaa" font-size="9">67/100</text>
+        <rect x="120" y="-5" width="50" height="10" rx="2" fill="rgba(255,255,255,0.1)"/>
+        <rect x="120" y="-5" width="33" height="10" rx="2" fill="url(#purpleGrad)"/>
+      </g>
+
+      <g transform="translate(200, 25)">
+        <text x="0" y="0" fill="#ffa502" font-size="9">🔏 TSA:</text>
+        <text x="35" y="0" fill="#2ed573" font-size="9">Online (FreeTSA)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Keyboard shortcuts -->
+  <g transform="translate(20, 590)">
+    <text x="0" y="0" fill="#444" font-size="9">Atalhos:</text>
+    <text x="40" y="0" fill="#666" font-size="9"><tspan font-weight="bold">E</tspan> Escalar |</text>
+    <text x="100" y="0" fill="#666" font-size="9"><tspan font-weight="bold">D</tspan> Descartar |</text>
+    <text x="170" y="0" fill="#666" font-size="9"><tspan font-weight="bold">U</tspan> Unblur |</text>
+    <text x="230" y="0" fill="#666" font-size="9"><tspan font-weight="bold">L</tspan> Logs |</text>
+    <text x="280" y="0" fill="#444" font-size="9">| v3.0.1 | 2026-07-04</text>
+  </g>
+</svg>

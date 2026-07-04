@@ -1,4 +1,4 @@
-# Olho de Deus v3.0 - Documentação Técnica
+# Olho de Deus v3.0.1 - Documentação Técnica
 
 ## Visão Geral
 
@@ -8,6 +8,17 @@ Sistema de vigilância com IA para detecção facial e comportamental, com:
 - **Cadeia de Custódia**: Merkle Tree + Timestamp Authority
 - **Human-in-the-Loop**: Dashboard para triagem humana
 - **Fairness Monitoring**: Detecção de viés algorítmico
+
+## 📊 Diagramas SVG
+
+Diagramas animados estão disponíveis em `assets/`:
+
+| Diagrama | Arquivo | Descrição |
+|----------|---------|-----------|
+| Arquitetura | `assets/arquitetura-edge-cloud.svg` | Edge-to-Cloud completa |
+| Fluxo Edge | `assets/fluxo-edge-detection.svg` | Pipeline de detecção |
+| HITL | `assets/dashboard-hitl.svg` | Dashboard de triagem |
+| Alerta | `assets/alerta-seguranca-v3.svg` | Fluxo de alerta |
 
 ## Arquitetura
 

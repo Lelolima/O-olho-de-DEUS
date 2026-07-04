@@ -1,0 +1,278 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650">
+  <defs>
+    <style>
+      @keyframes edge-pulse {
+        0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(0,217,255,0.6)); }
+        50% { opacity: 0.7; filter: drop-shadow(0 0 16px rgba(0,217,255,0.9)); }
+      }
+      @keyframes cloud-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
+      @keyframes data-flow {
+        0% { stroke-dashoffset: 20; opacity: 0.4; }
+        50% { opacity: 1; }
+        100% { stroke-dashoffset: 0; opacity: 0.4; }
+      }
+      @keyframes db-write {
+        0%, 100% { fill: #2ed573; }
+        50% { fill: #7bed9f; }
+      }
+      @keyframes merkle-glow {
+        0%, 100% { filter: drop-shadow(0 0 5px rgba(168,85,247,0.5)); }
+        50% { filter: drop-shadow(0 0 20px rgba(168,85,247,0.9)); }
+      }
+      @keyframes tsa-flash {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,165,2,0.8)); }
+      }
+      @keyframes blur-anim {
+        0%, 100% { filter: blur(0px); }
+        50% { filter: blur(4px); }
+      }
+      .edge-node { animation: edge-pulse 2s ease-in-out infinite; }
+      .cloud-node { animation: cloud-float 3s ease-in-out infinite; }
+      .data-line { stroke-dasharray: 8 4; animation: data-flow 1.5s linear infinite; }
+      .db-active { animation: db-write 2s ease-in-out infinite; }
+      .merkle-tree { animation: merkle-glow 2.5s ease-in-out infinite; }
+      .tsa-seal { animation: tsa-flash 1.5s ease-in-out infinite; }
+      .blurred { animation: blur-anim 0.3s ease-in-out; }
+    </style>
+    <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d9ff"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#74ebd5"/>
+      <stop offset="100%" stop-color="#acb6e5"/>
+    </linearGradient>
+    <linearGradient id="dbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="100%" stop-color="#7bed9f"/>
+    </linearGradient>
+    <linearGradient id="merkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="tsaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffa502"/>
+      <stop offset="100%" stop-color="#ff7f50"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1000" height="650" fill="url(#bgGrad)"/>
+  <text x="500" y="35" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="20" font-weight="bold">🏗️ ARQUITETURA EDGE-TO-CLOUD v3.0.1</text>
+  <text x="500" y="52" text-anchor="middle" fill="#666" font-family="Segoe UI, Arial" font-size="11">Edge AI → Metadados → Cloud → HITL → Merkle + TSA</text>
+
+  <!-- EDGE LAYER -->
+  <g transform="translate(30, 80)">
+    <rect x="0" y="0" width="280" height="200" rx="12" fill="rgba(0,217,255,0.08)" stroke="url(#edgeGrad)" stroke-width="2"/>
+    <text x="140" y="28" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">📡 EDGE LAYER (Local)</text>
+
+    <!-- Cameras -->
+    <g transform="translate(20, 45)">
+      <rect x="0" y="0" width="50" height="40" rx="6" fill="rgba(0,0,0,0.3)" stroke="rgba(0,217,255,0.4)" stroke-width="1"/>
+      <text x="25" y="25" text-anchor="middle" fill="#00d9ff" font-size="16">📹</text>
+      <text x="25" y="38" text-anchor="middle" fill="#aaa" font-size="8">RTSP</text>
+    </g>
+    <g transform="translate(85, 45)">
+      <rect x="0" y="0" width="50" height="40" rx="6" fill="rgba(0,0,0,0.3)" stroke="rgba(0,217,255,0.4)" stroke-width="1"/>
+      <text x="25" y="25" text-anchor="middle" fill="#00d9ff" font-size="16">📹</text>
+      <text x="25" y="38" text-anchor="middle" fill="#aaa" font-size="8">IP CAM</text>
+    </g>
+    <g transform="translate(150, 45)">
+      <rect x="0" y="0" width="50" height="40" rx="6" fill="rgba(0,0,0,0.3)" stroke="rgba(0,217,255,0.4)" stroke-width="1"/>
+      <text x="25" y="25" text-anchor="middle" fill="#00d9ff" font-size="16">📹</text>
+      <text x="25" y="38" text-anchor="middle" fill="#aaa" font-size="8">WebRTC</text>
+    </g>
+
+    <!-- Edge AI Processor -->
+    <g transform="translate(20, 100)" class="edge-node">
+      <rect x="0" y="0" width="240" height="85" rx="8" fill="rgba(0,217,255,0.12)" stroke="url(#edgeGrad)" stroke-width="2" filter="url(#glow)"/>
+      <text x="120" y="22" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">⚙️ EDGE AI PROCESSOR</text>
+
+      <!-- YOLOv8 -->
+      <g transform="translate(15, 32)">
+        <rect x="0" y="0" width="65" height="22" rx="4" fill="rgba(0,0,0,0.3)" stroke="rgba(255,71,87,0.5)" stroke-width="1"/>
+        <text x="32" y="16" text-anchor="middle" fill="#ff4757" font-size="8">YOLOv8-Face</text>
+      </g>
+
+      <!-- FaceNet -->
+      <g transform="translate(90, 32)">
+        <rect x="0" y="0" width="65" height="22" rx="4" fill="rgba(0,0,0,0.3)" stroke="rgba(168,85,247,0.5)" stroke-width="1"/>
+        <text x="32" y="16" text-anchor="middle" fill="#a855f7" font-size="8">FaceNet 512</text>
+      </g>
+
+      <!-- Dynamic Masking -->
+      <g transform="translate(15, 60)">
+        <rect x="0" y="0" width="100" height="20" rx="4" fill="rgba(0,217,255,0.15)" stroke="url(#edgeGrad)" stroke-width="1"/>
+        <text x="50" y="14" text-anchor="middle" fill="#00d9ff" font-size="9">🔒 Dynamic Masking</text>
+      </g>
+
+      <!-- Embeddings output -->
+      <g transform="translate(125, 60)">
+        <rect x="0" y="0" width="50" height="20" rx="4" fill="rgba(46,213,115,0.15)" stroke="rgba(46,213,115,0.5)" stroke-width="1"/>
+        <text x="25" y="14" text-anchor="middle" fill="#2ed573" font-size="8">[512-dim]</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Data flow arrow to cloud -->
+  <path d="M320 150 L380 150" stroke="url(#edgeGrad)" stroke-width="2" class="data-line"/>
+  <polygon points="380,150 370,145 370,155" fill="url(#edgeGrad)"/>
+  <text x="340" y="140" text-anchor="middle" fill="#666" font-size="9">Apenas metadados JSON</text>
+  <text x="340" y="170" text-anchor="middle" fill="#666" font-size="8">(sem frame bruto)</text>
+
+  <!-- CLOUD LAYER -->
+  <g transform="translate(390, 70)">
+    <rect x="0" y="0" width="580" height="220" rx="12" fill="rgba(116,235,213,0.06)" stroke="url(#cloudGrad)" stroke-width="2"/>
+    <text x="290" y="28" text-anchor="middle" fill="#74ebd5" font-family="Segoe UI, Arial" font-size="14" font-weight="bold">☁️ CLOUD LAYER</text>
+
+    <!-- Kafka/PubSub -->
+    <g transform="translate(20, 45)">
+      <rect x="0" y="0" width="100" height="50" rx="8" fill="rgba(0,0,0,0.3)" stroke="rgba(255,165,2,0.5)" stroke-width="1.5"/>
+      <text x="50" y="22" text-anchor="middle" fill="#ffa502" font-size="18">📨</text>
+      <text x="50" y="40" text-anchor="middle" fill="#ffa502" font-size="9" font-weight="bold">Kafka/PubSub</text>
+    </g>
+
+    <!-- PostgreSQL -->
+    <g transform="translate(140, 45)" class="cloud-node">
+      <rect x="0" y="0" width="110" height="50" rx="8" fill="rgba(0,0,0,0.3)" stroke="url(#dbGrad)" stroke-width="1.5"/>
+      <text x="55" y="22" text-anchor="middle" fill="#2ed573" font-size="18">🐘</text>
+      <text x="55" y="40" text-anchor="middle" fill="#2ed573" font-size="9" font-weight="bold">PostgreSQL</text>
+      <circle cx="95" cy="12" r="6" class="db-active"/>
+    </g>
+
+    <!-- pgvector -->
+    <g transform="translate(265, 55)">
+      <rect x="0" y="0" width="70" height="25" rx="5" fill="rgba(46,213,115,0.12)" stroke="rgba(46,213,115,0.4)" stroke-width="1"/>
+      <text x="35" y="17" text-anchor="middle" fill="#7bed9f" font-size="9">pgvector</text>
+    </g>
+
+    <!-- S3/GCS -->
+    <g transform="translate(360, 45)">
+      <rect x="0" y="0" width="90" height="50" rx="8" fill="rgba(0,0,0,0.3)" stroke="rgba(0,217,255,0.4)" stroke-width="1.5"/>
+      <text x="45" y="22" text-anchor="middle" fill="#00d9ff" font-size="18">📦</text>
+      <text x="45" y="40" text-anchor="middle" fill="#00d9ff" font-size="9" font-weight="bold">S3/GCS</text>
+    </g>
+
+    <!-- Merkle Tree -->
+    <g transform="translate(20, 115)" class="merkle-tree">
+      <rect x="0" y="0" width="130" height="85" rx="8" fill="rgba(168,85,247,0.1)" stroke="url(#merkleGrad)" stroke-width="2" filter="url(#glow)"/>
+      <text x="65" y="22" text-anchor="middle" fill="#a855f7" font-family="Segoe UI, Arial" font-size="10" font-weight="bold">🌳 MERKLE TREE</text>
+
+      <!-- Tree visualization -->
+      <g transform="translate(65, 35)">
+        <circle cx="0" cy="0" r="8" fill="url(#merkleGrad)"/>
+        <text x="0" y="4" text-anchor="middle" fill="white" font-size="8">root</text>
+        <line x1="-5" y1="8" x2="-15" y2="20" stroke="rgba(168,85,247,0.5)" stroke-width="1.5"/>
+        <line x1="5" y1="8" x2="15" y2="20" stroke="rgba(168,85,247,0.5)" stroke-width="1.5"/>
+        <circle cx="-15" cy="25" r="6" fill="rgba(168,85,247,0.4)"/>
+        <circle cx="15" cy="25" r="6" fill="rgba(168,85,247,0.4)"/>
+        <circle cx="-25" cy="45" r="5" fill="rgba(168,85,247,0.3)"/>
+        <circle cx="-5" cy="45" r="5" fill="rgba(168,85,247,0.3)"/>
+        <circle cx="5" cy="45" r="5" fill="rgba(168,85,247,0.3)"/>
+        <circle cx="25" cy="45" r="5" fill="rgba(168,85,247,0.3)"/>
+      </g>
+    </g>
+
+    <!-- TSA -->
+    <g transform="translate(170, 115)" class="tsa-seal">
+      <rect x="0" y="0" width="100" height="60" rx="8" fill="rgba(255,165,2,0.12)" stroke="url(#tsaGrad)" stroke-width="2"/>
+      <text x="50" y="25" text-anchor="middle" fill="#ffa502" font-size="20">🔏</text>
+      <text x="50" y="45" text-anchor="middle" fill="#ffa502" font-size="9" font-weight="bold">TSA RFC3161</text>
+      <text x="50" y="57" text-anchor="middle" fill="#888" font-size="7">FreeTSA</text>
+    </g>
+
+    <!-- HITL Dashboard -->
+    <g transform="translate(290, 115)">
+      <rect x="0" y="0" width="140" height="85" rx="8" fill="rgba(0,217,255,0.1)" stroke="url(#edgeGrad)" stroke-width="1.5"/>
+      <text x="70" y="22" text-anchor="middle" fill="#00d9ff" font-family="Segoe UI, Arial" font-size="10" font-weight="bold">🖥️ HITL DASHBOARD</text>
+
+      <!-- Operator -->
+      <g transform="translate(20, 35)">
+        <circle cx="15" cy="15" r="12" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+        <text x="15" y="19" text-anchor="middle" fill="#fff" font-size="12">👤</text>
+      </g>
+
+      <!-- Review buttons -->
+      <g transform="translate(45, 35)">
+        <rect x="0" y="0" width="40" height="14" rx="4" fill="rgba(46,213,115,0.3)" stroke="rgba(46,213,115,0.6)" stroke-width="1"/>
+        <text x="20" y="10" text-anchor="middle" fill="#2ed573" font-size="7">✓ OK</text>
+        <rect x="0" y="18" width="40" height="14" rx="4" fill="rgba(255,71,87,0.3)" stroke="rgba(255,71,87,0.6)" stroke-width="1"/>
+        <text x="20" y="28" text-anchor="middle" fill="#ff4757" font-size="7">✗ DESC</text>
+      </g>
+
+      <text x="95" y="55" fill="#666" font-size="7">Triagem humana</text>
+    </g>
+
+    <!-- Fairness Monitor -->
+    <g transform="translate(450, 115)">
+      <rect x="0" y="0" width="110" height="60" rx="8" fill="rgba(255,71,87,0.08)" stroke="rgba(255,71,87,0.4)" stroke-width="1.5"/>
+      <text x="55" y="22" text-anchor="middle" fill="#ff4757" font-family="Segoe UI, Arial" font-size="10" font-weight="bold">⚖️ FAIRNESS</text>
+
+      <!-- Metrics -->
+      <g transform="translate(10, 35)" font-size="7">
+        <text x="0" y="0" fill="#aaa">Dem. Parity:</text>
+        <text x="55" y="0" fill="#2ed573">0.94 ✓</text>
+        <text x="0" y="12" fill="#aaa">FPR Balance:</text>
+        <text x="55" y="12" fill="#ffa502">0.88</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Flow lines between cloud components -->
+  <path d="M120 115 L120 135 L140 135" stroke="url(#edgeGrad)" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.6"/>
+  <path d="M250 95 L265 95" stroke="url(#dbGrad)" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.6"/>
+  <path d="M450 95 L465 95" stroke="url(#edgeGrad)" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.6"/>
+  <path d="M150 157 L170 157" stroke="url(#merkleGrad)" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.6"/>
+  <path d="M270 145 L290 145" stroke="url(#tsaGrad)" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.6"/>
+
+  <!-- Privacy by Design Callout -->
+  <g transform="translate(30, 300)">
+    <rect x="0" y="0" width="240" height="70" rx="8" fill="rgba(46,213,115,0.08)" stroke="rgba(46,213,115,0.4)" stroke-width="1.5"/>
+    <text x="120" y="22" text-anchor="middle" fill="#2ed573" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">🔒 PRIVACY BY DESIGN (LGPD)</text>
+    <g transform="translate(15, 35)" font-size="9">
+      <text x="0" y="0" fill="#aaa">• Rostos borrados na borda</text>
+      <text x="0" y="14" fill="#aaa">• Apenas embeddings (512-dim)</text>
+      <text x="120" y="0" fill="#aaa">• Desofuscação: 2 chaves</text>
+      <text x="120" y="14" fill="#aaa">• score >98% + HITL approval</text>
+    </g>
+  </g>
+
+  <!-- Forensic Logging Callout -->
+  <g transform="translate(290, 300)">
+    <rect x="0" y="0" width="280" height="70" rx="8" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.4)" stroke-width="1.5"/>
+    <text x="140" y="22" text-anchor="middle" fill="#a855f7" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">📜 FORENSIC LOGGING</text>
+    <g transform="translate(15, 35)" font-size="9">
+      <text x="0" y="0" fill="#aaa">• Batch 100 evidências → Merkle root</text>
+      <text x="0" y="14" fill="#aaa">• TSA carimba: prova anterioridade</text>
+      <text x="150" y="0" fill="#aaa">• Hash SHA-256 canonically sorted</text>
+      <text x="150" y="14" fill="#aaa">• Audit trail imutável</text>
+    </g>
+  </g>
+
+  <!-- Alert Levels Callout -->
+  <g transform="translate(590, 300)">
+    <rect x="0" y="0" width="150" height="70" rx="8" fill="rgba(255,165,2,0.08)" stroke="rgba(255,165,2,0.4)" stroke-width="1.5"/>
+    <text x="75" y="22" text-anchor="middle" fill="#ffa502" font-family="Segoe UI, Arial" font-size="11" font-weight="bold">🎚️ ALERT LEVELS</text>
+    <g transform="translate(10, 35)" font-size="8">
+      <text x="0" y="0" fill="#2ed573">LOW 0.50-0.70 (log)</text>
+      <text x="0" y="12" fill="#ffa502">MEDIUM 0.70-0.85 (HITL)</text>
+      <text x="0" y="24" fill="#ff4757">HIGH 0.85+ (notifica)</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <text x="500" y="405" text-anchor="middle" fill="#444" font-family="Segoe UI, Arial" font-size="10">O-OLHO-DE-DEUS v3.0.1 | Edge-to-Cloud | 2026-07-04</text>
+</svg>

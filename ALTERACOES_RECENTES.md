@@ -1,7 +1,7 @@
-# 📝 ALTERAÇÕES RECENTES - OLHO DE DEUS v3.0
+# 📝 ALTERAÇÕES RECENTES - OLHO DE DEUS v3.0.1
 
 **Data:** 2026-07-04  
-**Versão:** 3.0.1 (pós-auditoria)
+**Versão:** 3.0.1 (pós-auditoria + diagramas SVG)
 
 ---
 
@@ -84,6 +84,46 @@ olho-de-deus-corrigido/
 ├── setup_postgres.sql                ✅ NOVO: Script para criar DB
 ├── pyproject.toml
 └── CLAUDE.md
+```
+
+---
+
+## 🎨 DIAGRAMAS SVG ATUALIZADOS (v3.0.1)
+
+**Data:** 2026-07-04
+
+**Novos arquivos:**
+- `assets/arquitetura-edge-cloud.svg` - Arquitetura Edge-to-Cloud completa
+- `assets/fluxo-edge-detection.svg` - Pipeline de detecção Edge AI
+- `assets/dashboard-hitl.svg` - Interface do HITL Dashboard
+- `assets/alerta-seguranca-v3.svg` - Fluxo de alerta de segurança
+- `assets/README.md` - Documentação dos diagramas
+
+**O que cada diagrama mostra:**
+
+| Diagrama | Componentes Principais | Animações |
+|----------|------------------------|-----------|
+| **Arquitetura** | Edge Layer, Cloud Layer, Merkle Tree, TSA, HITL, Fairness | Pulse, data flow, glow |
+| **Fluxo Edge** | RTSP → YOLOv8 → FaceNet → Masking → JSON | Scan, embed pulse, threshold |
+| **Dashboard** | WebSocket, Fila de Alertas, HITL, Fairness | Blink, slide, spinner |
+| **Alerta** | Detecção → Threshold → HITL → Notificação | Siren, shake, pulse |
+
+**Diferenças vs v2.0 (LEGADO):**
+
+| Aspecto | v2.0 | v3.0.1 |
+|---------|------|---------|
+| Processamento | Centralizado (OpenCV + Haar) | Edge AI (YOLOv8 + FaceNet) |
+| Dados na Cloud | Frames brutos | Apenas metadados JSON |
+| Privacidade | Sem blur | Dynamic Masking na borda |
+| Cadeia Custódia | Hash simples | Merkle Tree + TSA |
+| Notificação | Automática | HITL obrigatório |
+
+**Como usar:**
+```markdown
+![Arquitetura](assets/arquitetura-edge-cloud.svg)
+![Fluxo Edge](assets/fluxo-edge-detection.svg)
+![Dashboard](assets/dashboard-hitl.svg)
+![Alerta](assets/alerta-seguranca-v3.svg)
 ```
 
 ---
