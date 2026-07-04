@@ -1,0 +1,69 @@
+# Olho de Deus v3.0 - Configuração de Exemplo
+# Copie para config.yaml e ajuste os valores
+
+# Configurações Edge AI
+edge:
+  backend: "haar"  # haar, onnx, tensorrt, openvino
+  device: "CPU"     # CPU, GPU, MYRIAD (OpenVINO)
+  models:
+    face: "models/yolov8-face.onnx"       # Download necessário
+    embedding: "models/facenet.onnx"       # Download necessário
+  thresholds:
+    confidence: 0.5
+    iou: 0.45
+
+# Câmeras RTSP
+cameras:
+  - id: "CAM-001"
+    url: "rtsp://192.168.1.100:554/stream1"
+    location: "Entrada Principal"
+  - id: "CAM-002"
+    url: "rtsp://192.168.1.100:554/stream2"
+    location: "Corredor A"
+  # Adicione mais câmeras conforme necessário
+
+# Configurações Forensic Logging
+forensic:
+  log_dir: "./forensic_logs"
+  tsa_enabled: true
+  tsa_url: "https://freetsa.org/tsr"  # TSA gratuita
+  batch_size: 100  # Evidence por batch Merkle
+  archive_dir: "./forensic_logs/archives"
+
+# Configurações API (Cloud/HITL)
+api:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins:
+    - "http://localhost:3000"  # Dashboard frontend
+  jwt_secret: "${JWT_SECRET:change-me-in-production}"
+  jwt_expiration_hours: 8
+
+# Notificações
+notifications:
+  webhook_url: "${WEBHOOK_URL:}"  # URL para notificações
+  email:
+    enabled: false
+    smtp_server: "smtp.example.com"
+    smtp_port: 587
+    username: "${SMTP_USER:}"
+    password: "${SMTP_PASS:}"
+    recipients:
+      - "security@example.com"
+
+# Fairness monitoring
+fairness:
+  enabled: true
+  check_interval_hours: 24
+  min_samples: 100
+  thresholds:
+    demographic_parity: 0.10
+    equal_opportunity: 0.10
+    fpr_balance: 0.05  # Mais stricto para vigilância
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "olho_de_deus.log"
+  max_size_mb: 100
+  backup_count: 5

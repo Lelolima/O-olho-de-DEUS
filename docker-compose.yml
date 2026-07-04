@@ -1,0 +1,64 @@
+# Docker Compose - Desenvolvimento
+version: '3.8'
+
+services:
+  # Edge AI Processor
+  edge:
+    build:
+      context: ..
+      dockerfile: docker/edge/Dockerfile
+    environment:
+      - LOG_LEVEL=INFO
+      - TSA_URL=https://freetsa.org/tsr
+    volumes:
+      - ./forensic_logs:/app/forensic_logs
+      - ./evidence:/app/evidence
+    network_mode: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: olho_de_deus
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # API Cloud (HITL)
+  api:
+    build:
+      context: ..
+      dockerfile: docker/edge/Dockerfile
+    command: ["python", "main.py", "--config", "config.yaml", "--mode", "api"]
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/olho_de_deus
+      - JWT_SECRET=dev-secret-change-in-production
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+  # Frontend Dashboard (desenvolvimento)
+  frontend:
+    image: node:18-alpine
+    working_dir: /app
+    command: npm run dev -- --host
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
