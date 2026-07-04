@@ -21,12 +21,17 @@
         0%, 100% { opacity: 0.7; }
         50% { opacity: 1; filter: drop-shadow(0 0 8px currentColor); }
       }
+      @keyframes bar-pulse {
+        0%, 100% { width: 110; }
+        50% { width: 120; }
+      }
       .alert-badge { animation: alert-pulse 1s ease-in-out infinite; }
       .ws-status { animation: websocket-blink 2s ease-in-out infinite; }
       .alert-modal { animation: modal-slide 0.4s ease-out forwards; }
       .spinner { animation: spinner-rotate 1s linear infinite; transform-origin: center; }
       .approve-btn { animation: decision-flash 2s ease-in-out infinite; color: #2ed573; }
       .dismiss-btn { animation: decision-flash 2s ease-in-out infinite; color: #ff4757; animation-delay: 0.5s; }
+      .threat-bar { animation: bar-pulse 1s ease-in-out infinite; }
     </style>
     <linearGradient id="dashGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#1b263b"/>
@@ -127,9 +132,7 @@
       <g transform="translate(240, 115)">
         <text x="0" y="0" fill="#888" font-size="9">NÍVEL DE AMEAÇA:</text>
         <rect x="0" y="10" width="140" height="16" rx="8" fill="rgba(255,255,255,0.1)"/>
-        <rect x="0" y="10" width="120" height="16" rx="8" fill="url(#alertGrad)">
-          <animate attributeName="width" values="110;120;110" dur="1s" repeatCount="indefinite"/>
-        </rect>
+        <rect x="0" y="10" width="120" height="16" rx="8" fill="url(#alertGrad)" class="threat-bar"/>
         <text x="130" y="23" fill="#ff4757" font-size="11" font-weight="bold">ALTO</text>
 
         <!-- Alarm score -->

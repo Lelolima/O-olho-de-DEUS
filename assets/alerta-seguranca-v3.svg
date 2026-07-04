@@ -27,11 +27,16 @@
         0% { transform: scale(0.95); opacity: 0; }
         100% { transform: scale(1); opacity: 1; }
       }
+      @keyframes threat-pulse {
+        0%, 100% { width: 160; }
+        50% { width: 170; }
+      }
       .alert-container { animation: alert-pulse 0.8s ease-in-out infinite; }
       .siren { animation: siren-rotate 0.3s ease-in-out infinite; transform-origin: bottom center; }
       .shake-effect { animation: shake 0.1s ease-in-out infinite; }
       .blink-fast { animation: blink-fast 0.5s ease-in-out infinite; }
       .hitl-panel { animation: hitl-appear 0.5s ease-out forwards; }
+      .threat-bar { animation: threat-pulse 1s ease-in-out infinite; }
     </style>
     <linearGradient id="alertBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#2d0a0a"/>
@@ -171,9 +176,7 @@
     <g transform="translate(30, 165)">
       <text x="0" y="0" fill="#888" font-size="10">NÍVEL DE AMEAÇA:</text>
       <rect x="0" y="12" width="200" height="18" rx="9" fill="rgba(255,255,255,0.1)"/>
-      <rect x="0" y="12" width="170" height="18" rx="9" fill="url(#dangerGrad)">
-        <animate attributeName="width" values="160;170;160" dur="1s" repeatCount="indefinite"/>
-      </rect>
+      <rect x="0" y="12" width="170" height="18" rx="9" fill="url(#dangerGrad)" class="threat-bar"/>
       <text x="185" y="26" fill="#ff4757" font-size="14" font-weight="bold">ALTO</text>
     </g>
 

@@ -26,12 +26,17 @@
         0%, 100% { filter: drop-shadow(0 0 4px rgba(0,217,255,0.4)); }
         50% { filter: drop-shadow(0 0 12px rgba(0,217,255,0.9)); }
       }
+      @keyframes indicator-move {
+        0%, 100% { cx: 130; }
+        50% { cx: 135; }
+      }
       .rtsp-stream { stroke-dasharray: 8 4; animation: rtsp-flow 1.2s linear infinite; }
       .ai-box { animation: ai-process 2s ease-in-out infinite; }
       .embed-dot { animation: embed-pulse 1.5s ease-in-out infinite; }
       .blur-shield { animation: blur-shield 2.5s ease-in-out infinite; }
       .json-output { animation: json-appear 0.4s ease-out forwards; }
       .threshold-meter { animation: threshold-glow 1.8s ease-in-out infinite; }
+      .indicator-dot { animation: indicator-move 2s ease-in-out infinite; }
     </style>
     <linearGradient id="rtspGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#00d9ff"/>
@@ -240,9 +245,7 @@
       <text x="150" y="38" fill="#ff6b81" font-size="8">CRIT</text>
 
       <!-- Current position -->
-      <circle cx="130" cy="25" r="5" fill="#fff" filter="url(#brightGlow)">
-        <animate attributeName="cx" values="130;135;130" dur="2s" repeatCount="indefinite"/>
-      </circle>
+      <circle cx="130" cy="25" r="5" fill="#fff" filter="url(#brightGlow)" class="indicator-dot"/>
     </g>
 
     <!-- Decision paths -->
