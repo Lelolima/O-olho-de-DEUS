@@ -167,8 +167,8 @@ Este software é **apenas para fins educacionais e de pesquisa**. O uso em ambie
 
 1. **Baixe o projeto**
 ```powershell
-git clone https://github.com/Lelolima/Project-Eyes-of-God-2.9.git
-cd Project-Eyes-of-God-2.9
+git clone [https://github.com/Lelolima/O-olho-de-DEUS.git]
+cd Project-Eyes-of-God
 ```
 
 2. **Execute o instalador**
@@ -185,8 +185,8 @@ cd Project-Eyes-of-God-2.9
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/Lelolima/Project-Eyes-of-God-2.9.git
-cd Project-Eyes-of-God-2.9
+git clone [https://github.com/Lelolima/O-olho-de-DEUS.git]
+cd Project-Eyes-of-God
 
 # 2. Crie ambiente virtual (recomendado)
 python3 -m venv venv
@@ -348,9 +348,10 @@ Contribuições são bem-vindas! Por favor:
 
 ## 📧 Contato
 
-**Desenvolvido por:** @Lelolima
+**Desenvolvido por:** Wellington de Lima Catarina
+lelolima806@gmail.com
 
-**Repositório:** [github.com/Lelolima/Project-Eyes-of-God-2.9](https://github.com/Lelolima/Project-Eyes-of-God-2.9)
+**Repositório:** [github.com/Lelolima/Eyes-of-God](https://github.com/Lelolima/Eyes-of-God)
 
 ---
 
