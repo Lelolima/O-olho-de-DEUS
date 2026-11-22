@@ -1,10 +1,10 @@
 """Legal Basis - Registro de base legal para processamento LGPD."""
 
-from enum import Enum
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-import logging
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -56,33 +56,40 @@ class ProcessingRecord:
     data_categories: list  # Categorias de dados processados
     retention_days: int  # Prazo de retenção
     data_controller: str = ""  # Controlador (empresa/órgão)
-    operator_id: Optional[str] = None  # Operador que realizou
-    consent_record_id: Optional[str] = None  # ID do consentimento (se aplicável)
+    operator_id: str | None = None  # Operador que realizou
+    consent_record_id: str | None = None  # ID do consentimento (se aplicável)
+
+    # Identificador atribuído pelo LegalBasisRegistry
+    record_id: str = ""
 
     # Timestamps
     created_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
 
     # Metadados adicionais
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Calcula data de expiração automaticamente."""
         if self.expires_at is None:
             self.expires_at = self.created_at + timedelta(days=self.retention_days)
 
+    def _expiry(self) -> datetime:
+        return self.expires_at or self.created_at + timedelta(days=self.retention_days)
+
     def is_expired(self) -> bool:
         """Verifica se registro expirou."""
-        return datetime.now() > self.expires_at
+        return datetime.now() > self._expiry()
 
     def days_until_expiration(self) -> int:
         """Retorna dias restantes até expiração."""
-        delta = self.expires_at - datetime.now()
+        delta = self._expiry() - datetime.now()
         return max(0, delta.days)
 
     def to_dict(self) -> dict:
         """Serializa para dict."""
         return {
+            "record_id": self.record_id,
             "purpose": self.purpose,
             "legal_basis": self.legal_basis.value,
             "data_categories": [c.value for c in self.data_categories],
@@ -94,7 +101,7 @@ class ProcessingRecord:
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "is_expired": self.is_expired(),
             "days_until_expiration": self.days_until_expiration(),
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
 
@@ -126,7 +133,7 @@ class LegalBasisRegistry:
             default_controller: Nome do controlador de dados
         """
         self.default_controller = default_controller
-        self._records: Dict[str, ProcessingRecord] = {}
+        self._records: dict[str, ProcessingRecord] = {}
 
     def register_processing(
         self,
@@ -134,9 +141,9 @@ class LegalBasisRegistry:
         legal_basis: LegalBasis,
         data_categories: list,
         retention_days: int,
-        consent_record_id: Optional[str] = None,
-        operator_id: Optional[str] = None,
-        metadata: Optional[dict] = None
+        consent_record_id: str | None = None,
+        operator_id: str | None = None,
+        metadata: dict | None = None,
     ) -> ProcessingRecord:
         """
         Registra nova operação de processamento.
@@ -165,14 +172,14 @@ class LegalBasisRegistry:
             data_controller=self.default_controller,
             operator_id=operator_id,
             consent_record_id=consent_record_id,
-            metadata=metadata or {}
+            metadata=metadata or {},
+            record_id=record_id,
         )
 
         self._records[record_id] = record
 
         logger.info(
-            f"Registro de processamento criado: {record_id} - "
-            f"Purpose: {purpose}, Legal Basis: {legal_basis.value}"
+            f"Registro de processamento criado: {record_id} - Purpose: {purpose}, Legal Basis: {legal_basis.value}"
         )
 
         return record
@@ -194,15 +201,12 @@ class LegalBasisRegistry:
         record = self._records[record_id]
 
         if record.is_expired():
-            logger.warning(
-                f"Processamento expirado: {record_id} - "
-                f"Expirou em {record.expires_at}"
-            )
+            logger.warning(f"Processamento expirado: {record_id} - Expirou em {record.expires_at}")
             return False
 
         return True
 
-    def get_record(self, record_id: str) -> Optional[ProcessingRecord]:
+    def get_record(self, record_id: str) -> ProcessingRecord | None:
         """Retorna registro por ID."""
         return self._records.get(record_id)
 
@@ -223,14 +227,15 @@ class LegalBasisRegistry:
 
         return expired_count
 
-    def get_all_records(self) -> Dict[str, ProcessingRecord]:
+    def get_all_records(self) -> dict[str, ProcessingRecord]:
         """Retorna todos registros."""
         return self._records.copy()
 
-    def get_consent_records(self) -> Dict[str, ProcessingRecord]:
+    def get_consent_records(self) -> dict[str, ProcessingRecord]:
         """Retorna apenas registros baseados em consentimento."""
         return {
-            rid: rec for rid, rec in self._records.items()
+            rid: rec
+            for rid, rec in self._records.items()
             if rec.legal_basis in [LegalBasis.CONSENTIMENTO, LegalBasis.CONSENTIMENTO_SENSIVEL]
         }
 
@@ -241,7 +246,7 @@ class LegalBasisRegistry:
         Returns:
             Relatório de todas operações de processamento
         """
-        records_by_basis = {}
+        records_by_basis: dict[str, list[dict[str, Any]]] = {}
         for record in self._records.values():
             basis = record.legal_basis.value
             if basis not in records_by_basis:
@@ -255,11 +260,9 @@ class LegalBasisRegistry:
             "active_records": sum(1 for r in self._records.values() if not r.is_expired()),
             "expired_records": sum(1 for r in self._records.values() if r.is_expired()),
             "records_by_legal_basis": records_by_basis,
-            "data_categories_processed": list(set(
-                cat.value
-                for rec in self._records.values()
-                for cat in rec.data_categories
-            ))
+            "data_categories_processed": list(
+                set(cat.value for rec in self._records.values() for cat in rec.data_categories)
+            ),
         }
 
 

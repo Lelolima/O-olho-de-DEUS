@@ -25,14 +25,12 @@ Uso:
 
 import hashlib
 import json
-import os
-import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .merkle_tree import MerkleTree, MerkleProof
-from .timestamp import TimestampAuthority, TimestampResponse
+from .merkle_tree import MerkleProof, MerkleTree
+from .timestamp import TimestampAuthority
 
 
 class ForensicLogger:
@@ -57,9 +55,9 @@ class ForensicLogger:
         self,
         log_dir: str,
         tsa_enabled: bool = True,
-        tsa_url: Optional[str] = None,
+        tsa_url: str | None = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
-        archive_dir: Optional[str] = None
+        archive_dir: str | None = None,
     ):
         """
         Inicializa Forensic Logger.
@@ -81,8 +79,8 @@ class ForensicLogger:
         self.archive_dir.mkdir(parents=True, exist_ok=True)
 
         # Buffer de evidências pendentes
-        self.pending_evidence: List[dict] = []
-        self.pending_hashes: List[str] = []
+        self.pending_evidence: list[dict] = []
+        self.pending_hashes: list[str] = []
 
         # TSA client
         self.tsa = TimestampAuthority(tsa_url) if tsa_enabled else None
@@ -116,7 +114,7 @@ class ForensicLogger:
             evidence["timestamp"] = datetime.now().isoformat()
 
         # Hash do frame (se existir)
-        if "frame_path" in evidence and evidence["frame_path"]:
+        if evidence.get("frame_path"):
             evidence["frame_sha256"] = self._hash_file(evidence["frame_path"])
 
         # Hash dos metadados (canonical JSON)
@@ -141,7 +139,7 @@ class ForensicLogger:
 
         return evidence
 
-    def flush_batch(self) -> Optional[dict]:
+    def flush_batch(self) -> dict | None:
         """
         Fecha Merkle tree do batch atual e carimba root na TSA.
 
@@ -156,11 +154,7 @@ class ForensicLogger:
 
         # Constrói Merkle tree
         leaves = [
-            {
-                "evidence_id": e["id"],
-                "metadata_hash": e["metadata_hash"],
-                "timestamp": e["timestamp"]
-            }
+            {"evidence_id": e["id"], "metadata_hash": e["metadata_hash"], "timestamp": e["timestamp"]}
             for e in self.pending_evidence
         ]
         tree = MerkleTree(leaves)
@@ -180,11 +174,8 @@ class ForensicLogger:
             "evidence_count": len(self.pending_evidence),
             "evidence_ids": [e["id"] for e in self.pending_evidence],
             "evidence_hashes": [e["metadata_hash"] for e in self.pending_evidence],
-            "leaf_proofs": [
-                tree.get_proof(i).to_dict()
-                for i in range(len(self.pending_evidence))
-            ],
-            "flushed_at": datetime.now().isoformat()
+            "leaf_proofs": [tree.get_proof(i).to_dict() for i in range(len(self.pending_evidence))],
+            "flushed_at": datetime.now().isoformat(),
         }
 
         # Salva batch record
@@ -197,11 +188,7 @@ class ForensicLogger:
 
         return batch_record
 
-    def verify_evidence_chain(
-        self,
-        evidence_id: str,
-        batch_record: dict
-    ) -> dict:
+    def verify_evidence_chain(self, evidence_id: str, batch_record: dict) -> dict:
         """
         Verifica cadeia de custódia de uma evidência.
 
@@ -217,13 +204,13 @@ class ForensicLogger:
                 - evidence_found: True se evidência encontrada no batch
                 - details: Detalhes da verificação
         """
-        result = {
+        result: dict[str, Any] = {
             "evidence_id": evidence_id,
             "valid": True,
             "merkle_proof_valid": True,
             "timestamp_valid": True,
             "evidence_found": False,
-            "details": {}
+            "details": {},
         }
 
         # Encontra evidência no batch
@@ -240,17 +227,14 @@ class ForensicLogger:
         expected_hash = batch_record["evidence_hashes"][index]
 
         # Verifica prova Merkle
-        from .merkle_tree import MerkleProof
         proof = MerkleProof.from_dict(proof_data)
 
         from .merkle_tree import verify_merkle_proof
+
         # Antes: MT([]) lançava "MerkleTree requer pelo menos uma folha" e a
         # verificação nunca funcionava. Agora também confere a raiz do batch
         # (uma prova autoconsistente, mas de outra árvore, não é aceita).
-        is_valid = (
-            verify_merkle_proof(proof)
-            and proof.root_hash == batch_record.get("merkle_root")
-        )
+        is_valid = verify_merkle_proof(proof) and proof.root_hash == batch_record.get("merkle_root")
 
         if not is_valid:
             result["merkle_proof_valid"] = False
@@ -260,17 +244,12 @@ class ForensicLogger:
         # Verifica timestamp TSA (se existir)
         if batch_record.get("timestamp_cert"):
             ts_cert = batch_record["timestamp_cert"]
-            if ts_cert.get("tsr_base64"):
-                # Verificação simplificada
-                if self.tsa:
-                    ts_valid = self.tsa.verify_timestamp(
-                        ts_cert["tsr_base64"],
-                        batch_record["merkle_root"]
-                    )
-                    result["timestamp_valid"] = ts_valid
-                    if not ts_valid:
-                        result["valid"] = False
-                        result["details"]["error"] = "Timestamp TSA inválido"
+            if ts_cert.get("tsr_base64") and self.tsa:  # verificação simplificada (ver TimestampAuthority)
+                ts_valid = self.tsa.verify_timestamp(ts_cert["tsr_base64"], batch_record["merkle_root"])
+                result["timestamp_valid"] = ts_valid
+                if not ts_valid:
+                    result["valid"] = False
+                    result["details"]["error"] = "Timestamp TSA inválido"
 
         result["details"]["merkle_root"] = batch_record["merkle_root"]
         result["details"]["leaf_index"] = index
@@ -287,7 +266,7 @@ class ForensicLogger:
             "batch_size": self.batch_size,
             "tsa_enabled": self.tsa_enabled,
             "log_dir": str(self.log_dir),
-            "archive_dir": str(self.archive_dir)
+            "archive_dir": str(self.archive_dir),
         }
 
     def _hash_file(self, file_path: str) -> str:
@@ -311,17 +290,10 @@ class ForensicLogger:
         Remove campos voláteis (batch_pending, logged_at) antes de hash.
         """
         # Cria cópia sem campos voláteis
-        evidence_copy = {
-            k: v for k, v in evidence.items()
-            if k not in ["batch_pending", "logged_at", "batch_record"]
-        }
+        evidence_copy = {k: v for k, v in evidence.items() if k not in ["batch_pending", "logged_at", "batch_record"]}
 
         # Canonicaliza JSON (sorted keys, no whitespace)
-        canonical = json.dumps(
-            evidence_copy,
-            sort_keys=True,
-            separators=(",", ":")
-        )
+        canonical = json.dumps(evidence_copy, sort_keys=True, separators=(",", ":"))
 
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -339,9 +311,7 @@ class ForensicLogger:
 
     def _save_batch_record(self, batch_record: dict):
         """Salva batch record no archive."""
-        filename = self.BATCH_FILENAME_FORMAT.format(
-            batch_id=batch_record["batch_id"]
-        )
+        filename = self.BATCH_FILENAME_FORMAT.format(batch_id=batch_record["batch_id"])
         filepath = self.archive_dir / filename
 
         with open(filepath, "w", encoding="utf-8") as f:
@@ -374,13 +344,7 @@ class HitlDecisionLogger:
         """
         self.forensic_logger = forensic_logger
 
-    def log_decision(
-        self,
-        alert_id: str,
-        operator_id: str,
-        decision: str,
-        justification: Optional[str] = None
-    ) -> dict:
+    def log_decision(self, alert_id: str, operator_id: str, decision: str, justification: str | None = None) -> dict:
         """
         Registra decisão de operador HITL.
 
@@ -400,7 +364,7 @@ class HitlDecisionLogger:
             "operator_id": operator_id,
             "decision": decision,
             "justification": justification,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         return self.forensic_logger.log_evidence(evidence)

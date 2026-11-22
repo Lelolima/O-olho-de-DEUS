@@ -1,9 +1,9 @@
 """Incident Model - Modelo SQLAlchemy para incidentes/alertas."""
 
 from datetime import datetime
-from typing import Optional, List
-from sqlalchemy import Column, String, Integer, Float, DateTime, Boolean, JSON, Text, Index
-from sqlalchemy.orm import declarative_base, relationship
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Index, Integer, String, Text
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
@@ -51,7 +51,8 @@ class Incident(Base):
     merkle_root = Column(String(64), nullable=True)
 
     # Metadados extras
-    metadata = Column(JSON, default=dict)
+    # Coluna "metadata"; atributo renomeado porque "metadata" é reservado no SQLAlchemy
+    extra_metadata = Column("metadata", JSON, default=dict)
 
     # Índice composto para consultas frequenti
     __table_args__ = (
@@ -70,7 +71,7 @@ class Incident(Base):
             "requires_hitl": self.requires_hitl,
             "faces_count": self.faces_count,
             "operator_id": self.operator_id,
-            "review_decision": self.review_decision
+            "review_decision": self.review_decision,
         }
 
 
@@ -110,7 +111,7 @@ class Evidence(Base):
             "frame_hash": self.frame_hash,
             "storage_path": self.storage_path,
             "verified": self.verified,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 
@@ -151,5 +152,5 @@ class MerkleBatch(Base):
             "tsa_status": self.tsa_status,
             "evidence_count": self.evidence_count,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "flushed_at": self.flushed_at.isoformat() if self.flushed_at else None
+            "flushed_at": self.flushed_at.isoformat() if self.flushed_at else None,
         }

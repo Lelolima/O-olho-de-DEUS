@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -19,31 +19,28 @@ class FairnessService:
     """
 
     def __init__(
-        self,
-        check_interval_hours: int = 24,
-        min_samples_for_analysis: int = 100,
-        alert_threshold: float = 0.10
+        self, check_interval_hours: int = 24, min_samples_for_analysis: int = 100, alert_threshold: float = 0.10
     ):
         self.check_interval_hours = check_interval_hours
         self.min_samples = min_samples_for_analysis
         self.alert_threshold = alert_threshold
 
         # Dados acumulados para análise
-        self._decisions: List[Dict[str, Any]] = []
-        self._last_check: Optional[datetime] = None
-        self._reports: List[dict] = []
+        self._decisions: list[dict[str, Any]] = []
+        self._last_check: datetime | None = None
+        self._reports: list[dict] = []
 
         # Callbacks de alerta
-        self._alert_callbacks: List[callable] = []
+        self._alert_callbacks: list[callable] = []
 
     def record_decision(
         self,
         prediction: int,
-        ground_truth: Optional[int],
-        sensitive_attr: Optional[str],
+        ground_truth: int | None,
+        sensitive_attr: str | None,
         alert_id: str,
         camera_id: str,
-        timestamp: Optional[datetime] = None
+        timestamp: datetime | None = None,
     ):
         """
         Registra decisão para análise futura de fairness.
@@ -56,18 +53,19 @@ class FairnessService:
             camera_id: ID da câmera
             timestamp: Timestamp da decisão
         """
-        self._decisions.append({
-            "prediction": prediction,
-            "ground_truth": ground_truth,
-            "sensitive_attr": sensitive_attr,
-            "alert_id": alert_id,
-            "camera_id": camera_id,
-            "timestamp": timestamp or datetime.now()
-        })
+        self._decisions.append(
+            {
+                "prediction": prediction,
+                "ground_truth": ground_truth,
+                "sensitive_attr": sensitive_attr,
+                "alert_id": alert_id,
+                "camera_id": camera_id,
+                "timestamp": timestamp or datetime.now(),
+            }
+        )
 
         logger.debug(
-            f"Decisão registrada: alert={alert_id}, pred={prediction}, "
-            f"truth={ground_truth}, attr={sensitive_attr}"
+            f"Decisão registrada: alert={alert_id}, pred={prediction}, truth={ground_truth}, attr={sensitive_attr}"
         )
 
     def should_check_fairness(self) -> bool:
@@ -78,7 +76,7 @@ class FairnessService:
         hours_since_check = (datetime.now() - self._last_check).total_seconds() / 3600
         return hours_since_check >= self.check_interval_hours
 
-    def run_fairness_analysis(self) -> Optional[dict]:
+    def run_fairness_analysis(self) -> dict | None:
         """
         Executa análise de fairness nos dados acumulados.
 
@@ -86,21 +84,16 @@ class FairnessService:
             Relatório de fairness ou None se dados insuficientes
         """
         if len(self._decisions) < self.min_samples:
-            logger.info(
-                f"Dados insuficientes para análise: {len(self._decisions)} < {self.min_samples}"
-            )
+            logger.info(f"Dados insuficientes para análise: {len(self._decisions)} < {self.min_samples}")
             return None
 
         # Filtra decisões com ground truth e sensitive attr
         valid_decisions = [
-            d for d in self._decisions
-            if d["ground_truth"] is not None and d["sensitive_attr"] is not None
+            d for d in self._decisions if d["ground_truth"] is not None and d["sensitive_attr"] is not None
         ]
 
         if len(valid_decisions) < self.min_samples:
-            logger.info(
-                f"Decisões válidas insuficientes: {len(valid_decisions)} < {self.min_samples}"
-            )
+            logger.info(f"Decisões válidas insuficientes: {len(valid_decisions)} < {self.min_samples}")
             return None
 
         # Extrai arrays para análise
@@ -138,8 +131,7 @@ class FairnessService:
     def _trigger_bias_alert(self, report: dict):
         """Dispara alerta de viés detectado."""
         alert_message = (
-            f"VIÉS ALGORÍTMICO DETECTADO: "
-            f"FPR disparity={report['metrics']['fpr_balance']['max_disparity']:.2%}"
+            f"VIÉS ALGORÍTMICO DETECTADO: FPR disparity={report['metrics']['fpr_balance']['max_disparity']:.2%}"
         )
 
         logger.warning(alert_message)
@@ -147,19 +139,16 @@ class FairnessService:
         for callback in self._alert_callbacks:
             try:
                 callback(report, alert_message)
-            except Exception as e:
-                logger.error(f"Erro em callback de alerta de viés: {e}")
+            except Exception:
+                logger.exception("Erro em callback de alerta de viés")
 
-    def get_latest_report(self) -> Optional[dict]:
+    def get_latest_report(self) -> dict | None:
         """Retorna último relatório de fairness."""
         return self._reports[-1] if self._reports else None
 
-    def get_historical_trends(self, metric_name: str) -> List[float]:
+    def get_historical_trends(self, metric_name: str) -> list[float]:
         """Retorna tendência histórica de uma métrica."""
-        return [
-            r["metrics"].get(metric_name, {}).get("max_disparity", 0)
-            for r in self._reports
-        ]
+        return [r["metrics"].get(metric_name, {}).get("max_disparity", 0) for r in self._reports]
 
     def cleanup_old_data(self, max_age_days: int = 90):
         """Limpa dados antigos (retenção)."""
@@ -167,10 +156,7 @@ class FairnessService:
 
         cutoff = datetime.now() - timedelta(days=max_age_days)
 
-        self._decisions = [
-            d for d in self._decisions
-            if d["timestamp"] > cutoff
-        ]
+        self._decisions = [d for d in self._decisions if d["timestamp"] > cutoff]
 
         logger.info(f"Limpeza concluída: {len(self._decisions)} decisões retidas")
 

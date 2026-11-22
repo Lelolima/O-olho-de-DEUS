@@ -11,10 +11,11 @@ A violação de privacidade é prevenida na fonte (borda), não apenas
 na transmissão.
 """
 
+import builtins
+from dataclasses import dataclass
+
 import cv2
 import numpy as np
-from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -27,25 +28,22 @@ class BoundingBox:
     height: int
 
     @property
-    def tuple(self) -> Tuple[int, int, int, int]:
+    def tuple(self) -> tuple[int, int, int, int]:
         """Retorna como tupla (x, y, w, h)."""
         return (self.x, self.y, self.width, self.height)
 
     @property
-    def slice(self) -> Tuple[slice, slice]:
+    def slice(self) -> builtins.tuple[slice, slice]:
         """Retorna slices para numpy indexing [y:y+h, x:x+w]."""
-        return (
-            slice(self.y, self.y + self.height),
-            slice(self.x, self.x + self.width)
-        )
+        return (slice(self.y, self.y + self.height), slice(self.x, self.x + self.width))
 
-    def expand(self, margin: int) -> 'BoundingBox':
+    def expand(self, margin: int) -> "BoundingBox":
         """Expande bounding box por margem (clamped à imagem)."""
         return BoundingBox(
             x=max(0, self.x - margin),
             y=max(0, self.y - margin),
             width=self.width + 2 * margin,
-            height=self.height + 2 * margin
+            height=self.height + 2 * margin,
         )
 
 
@@ -69,11 +67,7 @@ class DynamicMasker:
     BLACK_BOX = "black_box"
 
     def __init__(
-        self,
-        method: str = GAUSSIAN,
-        blur_strength: int = 99,
-        pixelation_factor: float = 0.1,
-        expand_margin: int = 10
+        self, method: str = GAUSSIAN, blur_strength: int = 99, pixelation_factor: float = 0.1, expand_margin: int = 10
     ):
         """
         Inicializa DynamicMasker.
@@ -94,11 +88,7 @@ class DynamicMasker:
         self.pixelation_factor = max(0.01, min(0.5, pixelation_factor))
         self.expand_margin = expand_margin
 
-    def apply(
-        self,
-        frame: np.ndarray,
-        faces: List[BoundingBox]
-    ) -> np.ndarray:
+    def apply(self, frame: np.ndarray, faces: list[BoundingBox]) -> np.ndarray:
         """
         Aplica mascaramento em todos os rostos detectados.
 
@@ -131,32 +121,21 @@ class DynamicMasker:
             # Substitui região no frame
             y_slice, x_slice = expanded.slice
             # Clamp slices to frame bounds
-            y_slice = slice(
-                max(0, y_slice.start),
-                min(frame.shape[0], y_slice.stop)
-            )
-            x_slice = slice(
-                max(0, x_slice.start),
-                min(frame.shape[1], x_slice.stop)
-            )
+            y_slice = slice(max(0, y_slice.start), min(frame.shape[0], y_slice.stop))
+            x_slice = slice(max(0, x_slice.start), min(frame.shape[1], x_slice.stop))
 
             # Adjust masked_region if clamping occurred
             y_offset = max(0, y_slice.start) - expanded.y
             x_offset = max(0, x_slice.start) - expanded.x
             region = masked_region[
-                y_offset:y_offset + y_slice.stop - y_slice.start,
-                x_offset:x_offset + x_slice.stop - x_slice.start
+                y_offset : y_offset + y_slice.stop - y_slice.start, x_offset : x_offset + x_slice.stop - x_slice.start
             ]
 
             masked[y_slice, x_slice] = region
 
         return masked
 
-    def _gaussian_blur(
-        self,
-        frame: np.ndarray,
-        face: BoundingBox
-    ) -> np.ndarray:
+    def _gaussian_blur(self, frame: np.ndarray, face: BoundingBox) -> np.ndarray:
         """Aplica Gaussian Blur forte no rosto."""
         y_slice, x_slice = face.slice
 
@@ -175,11 +154,7 @@ class DynamicMasker:
         blurred = cv2.GaussianBlur(roi, (kernel_size, kernel_size), sigma)
         return blurred
 
-    def _pixelate(
-        self,
-        frame: np.ndarray,
-        face: BoundingBox
-    ) -> np.ndarray:
+    def _pixelate(self, frame: np.ndarray, face: BoundingBox) -> np.ndarray:
         """
         Aplica pixelação no rosto.
 
@@ -196,24 +171,12 @@ class DynamicMasker:
         small_w = max(1, int(w * self.pixelation_factor))
 
         # Reduz e escala de volta
-        small = cv2.resize(
-            roi,
-            (small_w, small_h),
-            interpolation=cv2.INTER_AREA
-        )
-        pixelated = cv2.resize(
-            small,
-            (w, h),
-            interpolation=cv2.INTER_NEAREST
-        )
+        small = cv2.resize(roi, (small_w, small_h), interpolation=cv2.INTER_AREA)
+        pixelated = cv2.resize(small, (w, h), interpolation=cv2.INTER_NEAREST)
 
         return pixelated
 
-    def _black_box(
-        self,
-        face: BoundingBox,
-        frame_shape: tuple
-    ) -> np.ndarray:
+    def _black_box(self, face: BoundingBox, frame_shape: tuple) -> np.ndarray:
         """Cria retângulo preto sólido."""
         y_slice, x_slice = face.slice
 
@@ -245,27 +208,22 @@ class ConditionalUnblurer:
     # Threshold mínimo de confiança para permitir desofuscação
     MIN_CONFIDENCE_THRESHOLD = 0.98
 
-    def __init__(self, encryption_key: Optional[bytes] = None):
+    def __init__(self, encryption_key: bytes | None = None):
         """
         Inicializa ConditionalUnblurer.
 
         Args:
-            encryption_key: Chave para criptografia Fernet.
-                           Se None, usa modo simulação (sem criptografia real).
+            encryption_key: Chave Fernet (``Fernet.generate_key()``). Obrigatória: antes,
+                sem chave, o rosto era "criptografado" em texto claro (base64).
         """
+        if not encryption_key:
+            raise ValueError("ConditionalUnblurer exige uma chave Fernet (ENCRYPTION_KEY)")
+        from cryptography.fernet import Fernet
+
         self.encryption_key = encryption_key
+        self.fernet = Fernet(encryption_key)
 
-        if encryption_key:
-            from cryptography.fernet import Fernet
-            self.fernet = Fernet(encryption_key)
-        else:
-            self.fernet = None
-
-    def encrypt_face_roi(
-        self,
-        face_roi: np.ndarray,
-        output_format: str = "png"
-    ) -> bytes:
+    def encrypt_face_roi(self, face_roi: np.ndarray, output_format: str = "png") -> bytes:
         """
         Criptografa ROI do rosto antes de enviar para nuvem.
 
@@ -284,20 +242,9 @@ class ConditionalUnblurer:
 
         plaintext = buffer.tobytes()
 
-        # Criptografa
-        if self.fernet:
-            return self.fernet.encrypt(plaintext)
-        else:
-            # Modo simulação: retorna base64
-            import base64
-            return b"UNENCRYPTED:" + base64.b64encode(plaintext)
+        return self.fernet.encrypt(plaintext)
 
-    def decrypt_face_roi(
-        self,
-        encrypted_roi: bytes,
-        alarm_score: float,
-        hitl_approved: bool
-    ) -> Optional[np.ndarray]:
+    def decrypt_face_roi(self, encrypted_roi: bytes, alarm_score: float, hitl_approved: bool) -> np.ndarray | None:
         """
         Descriptografa ROI SOMENTE se ambas condições forem satisfeitas:
         1. alarm_score >= 0.98 (98% confiança)
@@ -317,26 +264,15 @@ class ConditionalUnblurer:
         # Verifica chave técnica
         if alarm_score < self.MIN_CONFIDENCE_THRESHOLD:
             raise PermissionError(
-                f"Confiança insuficiente para desofuscação: "
-                f"{alarm_score:.2f} < {self.MIN_CONFIDENCE_THRESHOLD}"
+                f"Confiança insuficiente para desofuscação: {alarm_score:.2f} < {self.MIN_CONFIDENCE_THRESHOLD}"
             )
 
         # Verifica chave humana
         if not hitl_approved:
-            raise PermissionError(
-                "Validação humana (HITL) requerida para desofuscação"
-            )
+            raise PermissionError("Validação humana (HITL) requerida para desofuscação")
 
-        # Descriptografa
-        if self.fernet and not encrypted_roi.startswith(b"UNENCRYPTED:"):
-            plaintext = self.fernet.decrypt(encrypted_roi)
-        else:
-            # Modo simulação ou não criptografado
-            import base64
-            if encrypted_roi.startswith(b"UNENCRYPTED:"):
-                plaintext = base64.b64decode(encrypted_roi[12:])
-            else:
-                plaintext = encrypted_roi
+        # Descriptografa (InvalidToken se o conteúdo não for Fernet válido)
+        plaintext = self.fernet.decrypt(encrypted_roi)
 
         # Decodifica imagem
         buffer = np.frombuffer(plaintext, dtype=np.uint8)
@@ -365,9 +301,7 @@ class ConditionalUnblurer:
 
 
 def create_blurred_preview(
-    frame: np.ndarray,
-    faces: List[BoundingBox],
-    preview_size: Tuple[int, int] = (320, 240)
+    frame: np.ndarray, faces: list[BoundingBox], preview_size: tuple[int, int] = (320, 240)
 ) -> bytes:
     """
     Cria preview borrado para dashboard HITL.
@@ -392,10 +326,7 @@ def create_blurred_preview(
 
     scaled_faces = [
         BoundingBox(
-            x=int(f.x * scale_x),
-            y=int(f.y * scale_y),
-            width=int(f.width * scale_x),
-            height=int(f.height * scale_y)
+            x=int(f.x * scale_x), y=int(f.y * scale_y), width=int(f.width * scale_x), height=int(f.height * scale_y)
         )
         for f in faces
     ]

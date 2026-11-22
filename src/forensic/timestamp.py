@@ -12,17 +12,13 @@ TSAs públicas gratuitas:
 """
 
 import base64
-import hashlib
-import struct
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import ClassVar
 
 import requests
 from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization
 
 
 @dataclass
@@ -30,20 +26,18 @@ class TimestampResponse:
     """Resposta de uma requisição TSA."""
 
     status: str  # "granted", "rejected", "waiting"
-    tsr_base64: Optional[str] = None  # Time-Stamp Response (DER-encoded)
-    tsa_url: Optional[str] = None
-    serial_number: Optional[int] = None
-    gen_time: Optional[datetime] = None
-    certificate: Optional[x509.Certificate] = None
-    error: Optional[str] = None
+    tsr_base64: str | None = None  # Time-Stamp Response (DER-encoded)
+    tsa_url: str | None = None
+    serial_number: int | None = None
+    gen_time: datetime | None = None
+    certificate: x509.Certificate | None = None
+    error: str | None = None
 
     def to_dict(self) -> dict:
         """Serializa resposta para dict JSON-serializable."""
         cert_pem = None
         if self.certificate:
-            cert_pem = self.certificate.public_bytes(
-                encoding=serialization.Encoding.PEM
-            ).decode('utf-8')
+            cert_pem = self.certificate.public_bytes(encoding=serialization.Encoding.PEM).decode("utf-8")
 
         return {
             "status": self.status,
@@ -52,7 +46,7 @@ class TimestampResponse:
             "serial_number": self.serial_number,
             "gen_time": self.gen_time.isoformat() if self.gen_time else None,
             "certificate_pem": cert_pem,
-            "error": self.error
+            "error": self.error,
         }
 
 
@@ -68,7 +62,7 @@ class TimestampAuthority:
     """
 
     # TSAs públicas gratuitas (ordenadas por preferência)
-    TSA_URLS: List[str] = [
+    TSA_URLS: ClassVar[list[str]] = [
         "https://freetsa.org/tsr",  # Gratuita, sem autenticação
         "http://timestamp.digicert.com",
         "http://timestamp.globalsign.com/tsa/r6advanced1",
@@ -78,7 +72,7 @@ class TimestampAuthority:
     # Timeout para requisições HTTP (segundos)
     HTTP_TIMEOUT = 10
 
-    def __init__(self, tsa_url: Optional[str] = None):
+    def __init__(self, tsa_url: str | None = None):
         """
         Inicializa cliente TSA.
 
@@ -87,10 +81,12 @@ class TimestampAuthority:
         """
         self.tsa_url = tsa_url or self.TSA_URLS[0]
         self._session = requests.Session()
-        self._session.headers.update({
-            "Content-Type": "application/timestamp-query",
-            "Accept": "application/timestamp-reply",
-        })
+        self._session.headers.update(
+            {
+                "Content-Type": "application/timestamp-query",
+                "Accept": "application/timestamp-reply",
+            }
+        )
 
     def request_timestamp(self, data_hash: str) -> TimestampResponse:
         """
@@ -112,8 +108,7 @@ class TimestampAuthority:
         # Valida hash
         if len(data_hash) != 64:
             return TimestampResponse(
-                status="rejected",
-                error=f"Hash inválido: esperado 64 caracteres hex, got {len(data_hash)}"
+                status="rejected", error=f"Hash inválido: esperado 64 caracteres hex, got {len(data_hash)}"
             )
 
         try:
@@ -121,37 +116,21 @@ class TimestampAuthority:
             tsq_der = self._create_tsq(data_hash)
 
             # Envia para TSA
-            response = self._session.post(
-                self.tsa_url,
-                data=tsq_der,
-                timeout=self.HTTP_TIMEOUT
-            )
+            response = self._session.post(self.tsa_url, data=tsq_der, timeout=self.HTTP_TIMEOUT)
 
             # Processa resposta
             if response.status_code == 200:
                 tsr_der = response.content
                 return self._parse_tsr(tsr_der)
             else:
-                return TimestampResponse(
-                    status="rejected",
-                    error=f"HTTP {response.status_code}: {response.text}"
-                )
+                return TimestampResponse(status="rejected", error=f"HTTP {response.status_code}: {response.text}")
 
         except requests.exceptions.Timeout:
-            return TimestampResponse(
-                status="rejected",
-                error=f"Timeout após {self.HTTP_TIMEOUT}s"
-            )
+            return TimestampResponse(status="rejected", error=f"Timeout após {self.HTTP_TIMEOUT}s")
         except requests.exceptions.ConnectionError as e:
-            return TimestampResponse(
-                status="rejected",
-                error=f"Erro de conexão: {str(e)}"
-            )
-        except Exception as e:
-            return TimestampResponse(
-                status="rejected",
-                error=f"Erro inesperado: {str(e)}"
-            )
+            return TimestampResponse(status="rejected", error=f"Erro de conexão: {e!s}")
+        except (requests.exceptions.RequestException, ValueError) as e:
+            return TimestampResponse(status="rejected", error=f"Erro na requisição/resposta TSA: {e!s}")
 
     def _create_tsq(self, data_hash: str) -> bytes:
         """
@@ -176,8 +155,7 @@ class TimestampAuthority:
         # Esta é uma implementação simplificada
 
         # OID para SHA-256: 1.2.840.113549.1.1.11
-        sha256_oid = bytes([0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D,
-                            0x01, 0x01, 0x0B])
+        sha256_oid = bytes([0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B])
 
         # Hash do algoritmo (NULL parameters)
         hash_algo_null = bytes([0x05, 0x00])
@@ -222,6 +200,8 @@ class TimestampAuthority:
         try:
             # Extrai PKIStatusInfo
             status_code, status_msg = self._extract_pki_status(tsr_der)
+            if status_code < 0:  # resposta malformada (antes virava status "unknown_-1")
+                return TimestampResponse(status="rejected", error=f"TSR malformada: {status_msg}")
 
             # Status codes (RFC 3161):
             # 0 = granted, 1 = granted_with_mods, 2 = rejection,
@@ -232,10 +212,7 @@ class TimestampAuthority:
             elif status_code == 1:
                 status = "granted_with_mods"
             elif status_code == 2:
-                return TimestampResponse(
-                    status="rejected",
-                    error=status_msg or "Rejeição pela TSA"
-                )
+                return TimestampResponse(status="rejected", error=status_msg or "Rejeição pela TSA")
             elif status_code == 3:
                 status = "waiting"
             else:
@@ -246,22 +223,22 @@ class TimestampAuthority:
 
             return TimestampResponse(
                 status=status,
-                tsr_base64=base64.b64encode(tsr_der).decode('utf-8'),
+                tsr_base64=base64.b64encode(tsr_der).decode("utf-8"),
                 tsa_url=self.tsa_url,
                 serial_number=serial,
                 gen_time=gen_time,
-                certificate=cert
+                certificate=cert,
             )
 
-        except Exception as e:
-            return TimestampResponse(
-                status="rejected",
-                error=f"Erro ao parsear TSR: {str(e)}"
-            )
+        except (ValueError, IndexError, TypeError) as e:
+            return TimestampResponse(status="rejected", error=f"Erro ao parsear TSR: {e!s}")
 
     def verify_timestamp(self, tsr_base64: str, expected_hash: str) -> bool:
         """
-        Verifica se um TSAR é válido e contém o hash esperado.
+        Verifica se o TSR contém um certificado e o hash esperado.
+
+        LIMITAÇÃO: não valida criptograficamente a assinatura da TSA nem a cadeia
+        do certificado (isso exige uma biblioteca CMS/PKCS#7, ex.: ``rfc3161ng``).
 
         Args:
             tsr_base64: TSAR em base64
@@ -273,19 +250,13 @@ class TimestampAuthority:
         try:
             tsr_der = base64.b64decode(tsr_base64)
 
-            # Verifica assinatura do certificado
-            cert = self._extract_certificate(tsr_der)
-            if not cert:
+            # Presença do certificado (a assinatura não é verificada; ver docstring)
+            if not self._extract_certificate(tsr_der):
                 return False
 
-            # Verifica hash
-            extracted_hash = self._extract_hashed_message(tsr_der)
-            if extracted_hash != expected_hash.lower():
-                return False
+            return self._extract_hashed_message(tsr_der) == expected_hash.lower()
 
-            return True
-
-        except Exception:
+        except (ValueError, IndexError, TypeError):
             return False
 
     # Métodos auxiliares DER
@@ -301,12 +272,13 @@ class TimestampAuthority:
             return bytes([length])
         else:
             # Long form: 0x8N onde N é número de bytes do length
-            length_bytes = length.to_bytes((length.bit_length() + 7) // 8, 'big')
+            length_bytes = length.to_bytes((length.bit_length() + 7) // 8, "big")
             return bytes([0x80 | len(length_bytes)]) + length_bytes
 
     def _generate_nonce(self) -> bytes:
         """Gera nonce de 8 bytes para evitar replay attacks."""
         import os
+
         return os.urandom(8)
 
     def _extract_pki_status(self, tsr_der: bytes) -> tuple[int, str]:
@@ -337,17 +309,14 @@ class TimestampAuthority:
                 raise ValueError("Status não é INTEGER")
 
             status_length = tsr_der[offset + 1]
-            status_code = int.from_bytes(
-                tsr_der[offset + 2:offset + 2 + status_length],
-                'big'
-            )
+            status_code = int.from_bytes(tsr_der[offset + 2 : offset + 2 + status_length], "big")
 
             return status_code, ""
 
-        except Exception as e:
+        except (ValueError, IndexError) as e:
             return -1, str(e)
 
-    def _extract_token_info(self, tsr_der: bytes) -> tuple[Optional[datetime], Optional[int], Optional[x509.Certificate]]:
+    def _extract_token_info(self, tsr_der: bytes) -> tuple[datetime | None, int | None, x509.Certificate | None]:
         """Extrai gen_time, serial_number e certificado do TSR."""
         # Implementação simplificada - retorna None para todos
         # Em produção, usar biblioteca asn1crypto completa
@@ -362,18 +331,18 @@ class TimestampAuthority:
         # Por enquanto, retorna None - o TSAR bruto é armazenado
         return None, None, None
 
-    def _extract_certificate(self, tsr_der: bytes) -> Optional[x509.Certificate]:
+    def _extract_certificate(self, tsr_der: bytes) -> x509.Certificate | None:
         """Extrai certificado da TSA do TSR."""
         # Simplificado - em produção, parse completo do CMS
         return None
 
-    def _extract_hashed_message(self, tsr_der: bytes) -> Optional[str]:
+    def _extract_hashed_message(self, tsr_der: bytes) -> str | None:
         """Extrai hashedMessage do TSR para verificação."""
         # Simplificado - em produção, parse completo
         return None
 
 
-def timestamp_multiple_hashes(hashes: List[str], tsa_url: Optional[str] = None) -> dict:
+def timestamp_multiple_hashes(hashes: list[str], tsa_url: str | None = None) -> dict:
     """
     Carimba múltiplos hashes e retorna Merkle root carimbado.
 
@@ -409,5 +378,5 @@ def timestamp_multiple_hashes(hashes: List[str], tsa_url: Optional[str] = None) 
         "root_hash": tree.root_hash,
         "leaf_count": len(hashes),
         "timestamp_response": response.to_dict() if response else None,
-        "proofs": [p.to_dict() for p in proofs]
+        "proofs": [p.to_dict() for p in proofs],
     }

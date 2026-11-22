@@ -1,12 +1,13 @@
 """Rate Limiter Middleware - Proteção contra brute force e DoS."""
 
-from fastapi import Request, HTTPException, status
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+import logging
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
-import logging
+
+from fastapi import HTTPException, Request, status
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +22,7 @@ class RateLimiter:
     - Alert flooding
     """
 
-    def __init__(
-        self,
-        requests_per_minute: int = 100,
-        requests_per_hour: int = 1000,
-        burst_size: int = 20
-    ):
+    def __init__(self, requests_per_minute: int = 100, requests_per_hour: int = 1000, burst_size: int = 20):
         """
         Inicializa rate limiter.
 
@@ -40,13 +36,13 @@ class RateLimiter:
         self.burst_size = burst_size
 
         # Armazena timestamps de requisições por identificador
-        self._requests: Dict[str, List[datetime]] = defaultdict(list)
+        self._requests: dict[str, list[datetime]] = defaultdict(list)
 
         # Limpeza automática a cada N minutos
         self._cleanup_interval = timedelta(minutes=5)
         self._last_cleanup = datetime.now()
 
-    def is_allowed(self, identifier: str) -> Tuple[bool, dict]:
+    def is_allowed(self, identifier: str) -> tuple[bool, dict]:
         """
         Verifica se requisição é permitida para identificador.
 
@@ -76,7 +72,7 @@ class RateLimiter:
             "requests_last_minute": requests_last_minute,
             "requests_last_hour": requests_last_hour,
             "limit_minute": self.requests_per_minute,
-            "limit_hour": self.requests_per_hour
+            "limit_hour": self.requests_per_hour,
         }
 
         # Burst allowance para primeiros requests
@@ -101,22 +97,23 @@ class RateLimiter:
         hour_ago = datetime.now() - timedelta(hours=1)
 
         for identifier in list(self._requests.keys()):
-            self._requests[identifier] = [
-                r for r in self._requests[identifier]
-                if r > hour_ago
-            ]
+            self._requests[identifier] = [r for r in self._requests[identifier] if r > hour_ago]
 
             # Remove chaves vazias
             if not self._requests[identifier]:
                 del self._requests[identifier]
 
 
-# Rate limiter global
-rate_limiter = RateLimiter(
-    requests_per_minute=100,
-    requests_per_hour=1000,
-    burst_size=20
+# Limitador do login (por IP): mitiga força bruta de senhas.
+# Ajustável por LOGIN_RATE_PER_MINUTE (padrão 10).
+login_rate_limiter = RateLimiter(
+    requests_per_minute=int(os.environ.get("LOGIN_RATE_PER_MINUTE", "10")),
+    requests_per_hour=int(os.environ.get("LOGIN_RATE_PER_HOUR", "100")),
+    burst_size=int(os.environ.get("LOGIN_RATE_PER_MINUTE", "10")),
 )
+
+# Rate limiter global
+rate_limiter = RateLimiter(requests_per_minute=100, requests_per_hour=1000, burst_size=20)
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -143,19 +140,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             logger.warning(f"Rate limit exceeded for {client_ip}: {details}")
 
             # Determina tempo de retry baseado no limite excedido
-            if details.get("reason") == "hour_limit_exceeded":
-                retry_after = 3600  # 1 hora
-            else:
-                retry_after = 60  # 1 minuto
+            retry_after = 3600 if details.get("reason") == "hour_limit_exceeded" else 60
 
             return JSONResponse(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                content={
-                    "error": "Rate limit exceeded",
-                    "detail": details,
-                    "retry_after_seconds": retry_after
-                },
-                headers={"Retry-After": str(retry_after)}
+                content={"error": "Rate limit exceeded", "detail": details, "retry_after_seconds": retry_after},
+                headers={"Retry-After": str(retry_after)},
             )
 
         # Adiciona headers de rate limit na resposta
@@ -163,9 +153,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         response.headers["X-RateLimit-Remaining-Minute"] = str(
             details["limit_minute"] - details["requests_last_minute"]
         )
-        response.headers["X-RateLimit-Remaining-Hour"] = str(
-            details["limit_hour"] - details["requests_last_hour"]
-        )
+        response.headers["X-RateLimit-Remaining-Hour"] = str(details["limit_hour"] - details["requests_last_hour"])
 
         return response
 
@@ -189,8 +177,7 @@ def rate_limit_decorator(requests_per_minute: int = 60):
 
             if not allowed:
                 raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail=f"Rate limit exceeded: {details}"
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=f"Rate limit exceeded: {details}"
                 )
 
             return await func(request, *args, **kwargs)
