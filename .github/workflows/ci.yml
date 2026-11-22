@@ -39,3 +39,15 @@ jobs:
           python -c "import src.hitl.dashboard_server"
       - name: Testes
         run: python -m pytest -q -p no:cacheprovider --cov=src --cov-report=term --cov-fail-under=70
+
+  docker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - name: Build da imagem (sem push)
+        run: docker build -f docker/Dockerfile -t olho-de-deus:ci .
+      - name: Smoke test da imagem
+        run: |
+          docker run --rm olho-de-deus:ci python -c "import src.hitl.dashboard_server, src.edge.analytics; print('ok')"
+          docker run --rm olho-de-deus:ci python examples/01_intrusao_fora_do_horario/run.py --saida /tmp/ex --sem-snapshots
