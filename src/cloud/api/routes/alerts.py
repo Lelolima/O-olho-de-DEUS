@@ -1,6 +1,7 @@
 """Alert Routes - API para gerenciamento de alertas."""
 
 import logging
+import os
 import uuid
 from datetime import datetime
 
@@ -341,14 +342,22 @@ async def websocket_alerts(websocket: WebSocket):
 # === Helpers ===
 
 
-async def _notify_authorities(alert_data: dict):
-    """Notifica autoridades (polícia, segurança)."""
-    # Em produção: integrar com sistema de despacho (911, 190)
-    # Ou enviar webhook para API da secretaria de segurança
-    pass
+async def _notify_authorities(alert_data: dict) -> dict:
+    """Notifica o canal configurado (webhook em WEBHOOK_URL) sobre um alerta escalado.
+
+    Antes era um ``pass``: escalar um alerta não notificava ninguém. Integração com
+    despacho oficial (190/193) não existe no projeto; use o webhook para isso.
+    """
+    from src.cloud.services.notification_service import NotificationConfig, NotificationService
+
+    webhook = os.environ.get("WEBHOOK_URL", "").strip()
+    if not webhook:
+        logger.warning(f"Alerta {alert_data.get('alert_id')} escalado, mas WEBHOOK_URL não está configurado")
+        return {"webhook": {"success": False, "error": "WEBHOOK_URL não configurado"}}
+    payload = {k: (v.isoformat() if isinstance(v, datetime) else v) for k, v in alert_data.items()}
+    return await NotificationService(NotificationConfig(webhook_url=webhook)).send_alert(payload)
 
 
-async def _notify_authorities_immediate(alert_data: dict):
-    """Notificação imediata para alertas críticos."""
-    # Críticos (>95%) notificam sem esperar HITL
-    pass
+async def _notify_authorities_immediate(alert_data: dict) -> dict:
+    """Notificação imediata para alertas críticos (score >= 0.95, sem esperar HITL)."""
+    return await _notify_authorities({**alert_data, "level": "critical"})

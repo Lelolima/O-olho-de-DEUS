@@ -144,7 +144,11 @@ async def submit_hitl_review(
 
     if review.decision == "escalate":
         alert_data["status"] = "escalated"
-        # TODO: Disparar notificação às autoridades
+        from src.cloud.api.routes.alerts import _notify_authorities
+
+        await _notify_authorities(
+            {"alert_id": review.alert_id, "alarm_score": alert_data["alarm_score"], "decided_by": operator_id}
+        )
     elif review.decision == "dismiss":
         alert_data["status"] = "dismissed"
 
