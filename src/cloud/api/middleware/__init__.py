@@ -1,28 +1,23 @@
 """Middleware __init__."""
 
 from src.cloud.api.middleware.auth import (
-    operator_auth,
+    JWT_SECRET,  # Exportado para verificação em testes
     OperatorAuth,
     get_current_operator,
-    require_role,
     oauth2_scheme,
-    JWT_SECRET  # Exportado para verificação em testes
+    operator_auth,
+    require_role,
 )
-
-from src.cloud.api.middleware.rate_limiter import (
-    rate_limiter,
-    RateLimitMiddleware,
-    rate_limit_decorator
-)
+from src.cloud.api.middleware.rate_limiter import RateLimitMiddleware, rate_limit_decorator, rate_limiter
 
 __all__ = [
-    "operator_auth",
+    "JWT_SECRET",
     "OperatorAuth",
-    "get_current_operator",
-    "require_role",
-    "oauth2_scheme",
-    "rate_limiter",
     "RateLimitMiddleware",
+    "get_current_operator",
+    "oauth2_scheme",
+    "operator_auth",
     "rate_limit_decorator",
-    "JWT_SECRET"
+    "rate_limiter",
+    "require_role",
 ]

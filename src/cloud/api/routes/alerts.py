@@ -1,30 +1,34 @@
 """Alert Routes - API para gerenciamento de alertas."""
 
-from fastapi import APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect
-from fastapi import Query
-from typing import List, Optional
-from datetime import datetime
-from pydantic import BaseModel, Field
+import logging
 import uuid
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from src.cloud.api.middleware.auth import authenticate_websocket, get_current_operator
-from src.cloud.database import get_db, IncidentRepository
-from sqlalchemy.orm import Session
+from src.cloud.database import IncidentRepository, get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 
 
 # === Schemas ===
 
+
 class AlertCreate(BaseModel):
     """Schema para criação de alerta."""
 
     camera_id: str
     alarm_score: float = Field(ge=0, le=1)
-    behavior_indicators: List[str]
-    frame_blurhash: Optional[str] = None
+    behavior_indicators: list[str]
+    frame_blurhash: str | None = None
     faces_count: int = 0
-    metadata: Optional[dict] = None
+    metadata: dict | None = None
 
 
 class AlertResponse(BaseModel):
@@ -43,8 +47,8 @@ class AlertReview(BaseModel):
     """Schema para revisão HITL."""
 
     decision: str  # "dismiss" | "escalate"
-    justification: Optional[str] = Field(None, max_length=500)
-    operator_id: Optional[str] = None
+    justification: str | None = Field(None, max_length=500)
+    operator_id: str | None = None
 
 
 # === In-Memory Store (fallback se DB não disponível) ===
@@ -60,9 +64,7 @@ def _get_incident_repo(db: Session) -> IncidentRepository:
 
 @router.post("/", response_model=AlertResponse, status_code=201)
 async def create_alert(
-    alert: AlertCreate,
-    operator: dict = Depends(get_current_operator),
-    db: Session = Depends(get_db)
+    alert: AlertCreate, operator: dict = Depends(get_current_operator), db: Session = Depends(get_db)
 ):
     """
     Cria novo alerta de comportamento suspeito.
@@ -101,9 +103,9 @@ async def create_alert(
                 "faces_count": alert.faces_count,
                 "behavior_indicators": alert.behavior_indicators,
                 "faces_data": [],
-                "metadata": alert.metadata or {},
+                "extra_metadata": alert.metadata or {},
                 "operator_id": operator["username"],
-                "review_decision": None
+                "review_decision": None,
             }
             incident = repo.create(incident_data)
 
@@ -118,10 +120,11 @@ async def create_alert(
                 status=incident.status,
                 created_at=incident.created_at,
                 requires_hitl=incident.requires_hitl,
-                faces_count=incident.faces_count
+                faces_count=incident.faces_count,
             )
-    except Exception as e:
-        # Fallback para memória se DB falhar
+    except SQLAlchemyError as exc:
+        # Banco indisponível: usa armazenamento em memória daqui em diante
+        logger.error(f"Banco de dados indisponível, usando memória: {exc}")
         _db_available = False
 
     # Fallback: armazenamento em memória
@@ -138,7 +141,7 @@ async def create_alert(
         "created_at": datetime.now(),
         "reviewed_at": None,
         "operator_id": operator["username"],
-        "review_decision": None
+        "review_decision": None,
     }
 
     _alerts_store[alert_id] = alert_data
@@ -150,14 +153,14 @@ async def create_alert(
     return AlertResponse(**alert_data)
 
 
-@router.get("/", response_model=List[AlertResponse])
+@router.get("/", response_model=list[AlertResponse])
 async def list_alerts(
     _operator: dict = Depends(get_current_operator),
-    status: Optional[str] = None,
-    camera_id: Optional[str] = None,
+    status: str | None = None,
+    camera_id: str | None = None,
     limit: int = 100,
     offset: int = 0,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Lista alertas com filtros opcionais."""
     global _db_available
@@ -165,12 +168,7 @@ async def list_alerts(
     try:
         if _db_available:
             repo = _get_incident_repo(db)
-            incidents = repo.list(
-                status=status,
-                camera_id=camera_id,
-                limit=limit,
-                offset=offset
-            )
+            incidents = repo.list(status=status, camera_id=camera_id, limit=limit, offset=offset)
             return [
                 AlertResponse(
                     alert_id=inc.id,
@@ -179,11 +177,13 @@ async def list_alerts(
                     status=inc.status,
                     created_at=inc.created_at,
                     requires_hitl=inc.requires_hitl,
-                    faces_count=inc.faces_count
+                    faces_count=inc.faces_count,
                 )
                 for inc in incidents
             ]
-    except Exception:
+    except SQLAlchemyError as exc:
+        # Banco indisponível: usa armazenamento em memória daqui em diante
+        logger.error(f"Banco de dados indisponível, usando memória: {exc}")
         _db_available = False
 
     # Fallback: memória
@@ -196,7 +196,7 @@ async def list_alerts(
         results.append(alert_data)
 
     results.sort(key=lambda x: x["created_at"], reverse=True)
-    return [AlertResponse(**r) for r in results[offset:offset + limit]]
+    return [AlertResponse(**r) for r in results[offset : offset + limit]]
 
 
 @router.get("/{alert_id}", response_model=AlertResponse)
@@ -216,9 +216,11 @@ async def get_alert(alert_id: str, operator: dict = Depends(get_current_operator
                     status=incident.status,
                     created_at=incident.created_at,
                     requires_hitl=incident.requires_hitl,
-                    faces_count=incident.faces_count
+                    faces_count=incident.faces_count,
                 )
-    except Exception:
+    except SQLAlchemyError as exc:
+        # Banco indisponível: usa armazenamento em memória daqui em diante
+        logger.error(f"Banco de dados indisponível, usando memória: {exc}")
         _db_available = False
 
     # Fallback: memória
@@ -230,10 +232,7 @@ async def get_alert(alert_id: str, operator: dict = Depends(get_current_operator
 
 @router.post("/{alert_id}/review", response_model=AlertResponse)
 async def review_alert(
-    alert_id: str,
-    review: AlertReview,
-    operator: dict = Depends(get_current_operator),
-    db: Session = Depends(get_db)
+    alert_id: str, review: AlertReview, operator: dict = Depends(get_current_operator), db: Session = Depends(get_db)
 ):
     """
     Operador HITL submete revisão de alerta.
@@ -253,10 +252,7 @@ async def review_alert(
                 raise HTTPException(status_code=404, detail="Alert não encontrado")
 
             if incident.status != "pending":
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Alert já está {incident.status}, não pode ser revisado"
-                )
+                raise HTTPException(status_code=400, detail=f"Alert já está {incident.status}, não pode ser revisado")
 
             # Atualiza status baseado na decisão
             new_status = "dismissed" if review.decision == "dismiss" else "escalated"
@@ -266,15 +262,12 @@ async def review_alert(
                 status=new_status,
                 operator_id=operator["username"],
                 decision=review.decision,
-                justification=review.justification
+                justification=review.justification,
             )
 
             # Dispara notificação às autoridades se escalado
             if review.decision == "escalate":
-                await _notify_authorities({
-                    "alert_id": alert_id,
-                    "alarm_score": updated.alarm_score
-                })
+                await _notify_authorities({"alert_id": alert_id, "alarm_score": updated.alarm_score})
 
             return AlertResponse(
                 alert_id=updated.id,
@@ -283,11 +276,13 @@ async def review_alert(
                 status=updated.status,
                 created_at=updated.created_at,
                 requires_hitl=updated.requires_hitl,
-                faces_count=updated.faces_count
+                faces_count=updated.faces_count,
             )
     except HTTPException:
         raise
-    except Exception as e:
+    except SQLAlchemyError as exc:
+        # Banco indisponível: usa armazenamento em memória daqui em diante
+        logger.error(f"Banco de dados indisponível, usando memória: {exc}")
         _db_available = False
 
     # Fallback: memória
@@ -297,10 +292,7 @@ async def review_alert(
     alert_data = _alerts_store[alert_id]
 
     if alert_data["status"] != "pending":
-        raise HTTPException(
-            status_code=400,
-            detail=f"Alert já está {alert_data['status']}, não pode ser revisado"
-        )
+        raise HTTPException(status_code=400, detail=f"Alert já está {alert_data['status']}, não pode ser revisado")
 
     # Atualiza status baseado na decisão
     if review.decision == "dismiss":
@@ -333,10 +325,7 @@ async def websocket_alerts(websocket: WebSocket):
         return
 
     # Envia alertas pendentes existentes
-    pending = [
-        a for a in _alerts_store.values()
-        if a["status"] == "pending"
-    ]
+    pending = [a for a in _alerts_store.values() if a["status"] == "pending"]
     for alert in pending[:10]:  # Limita a 10 mais recentes
         await websocket.send_json({"type": "existing", "alert": alert})
 
@@ -350,6 +339,7 @@ async def websocket_alerts(websocket: WebSocket):
 
 
 # === Helpers ===
+
 
 async def _notify_authorities(alert_data: dict):
     """Notifica autoridades (polícia, segurança)."""

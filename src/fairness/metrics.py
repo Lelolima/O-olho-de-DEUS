@@ -26,10 +26,10 @@ Uso:
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from datetime import datetime
+from typing import Any
 
 import numpy as np
-from sklearn.metrics import confusion_matrix, classification_report
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +39,12 @@ class FairnessResult:
     """Resultado de uma métrica de fairness."""
 
     metric_name: str
-    group_rates: Dict[str, float]
+    group_rates: dict[str, float]
     max_disparity: float
     passed: bool
     threshold: float = 0.10
-    sample_sizes: Dict[str, int] = field(default_factory=dict)
-    details: Dict[str, Any] = field(default_factory=dict)
+    sample_sizes: dict[str, int] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Serializa para dict."""
@@ -55,23 +55,23 @@ class FairnessResult:
             "passed": self.passed,
             "threshold": self.threshold,
             "sample_sizes": self.sample_sizes,
-            "details": self.details
+            "details": self.details,
         }
 
 
 class FairnessMetrics:
     """
-    Coleção de métricas de justiça algorítmica.
+     Coleção de métricas de justiça algorítmica.
 
-    Todas as métricas retornam FairnessResult com:
-    - group_rates: taxa para cada grupo sensível
-    - max_disparity: diferença entre maior e menor taxa
-    - passed: True se disparidade < threshold (default 10%)
+     Todas as métricas retornam FairnessResult com:
+     - group_rates: taxa para cada grupo sensível
+     - max_disparity: diferença entre maior e menor taxa
+     - passed: True se disparidade < threshold (default 10%)
 
-   _THRESHOLDs_recomendados (baseados em EEOC 4/5ths rule):
-    - Demographic Parity: < 0.10 (10% disparidade)
-    - Equal Opportunity: < 0.10
-    - False Positive Rate: < 0.05 (mais stricto para vigilância)
+    _THRESHOLDs_recomendados (baseados em EEOC 4/5ths rule):
+     - Demographic Parity: < 0.10 (10% disparidade)
+     - Equal Opportunity: < 0.10
+     - False Positive Rate: < 0.05 (mais stricto para vigilância)
     """
 
     def __init__(
@@ -79,7 +79,7 @@ class FairnessMetrics:
         demographic_parity_threshold: float = 0.10,
         equal_opportunity_threshold: float = 0.10,
         fpr_threshold: float = 0.05,
-        ppr_threshold: float = 0.10
+        ppr_threshold: float = 0.10,
     ):
         """
         Inicializa métricas de fairness.
@@ -94,14 +94,10 @@ class FairnessMetrics:
             "demographic_parity": demographic_parity_threshold,
             "equal_opportunity": equal_opportunity_threshold,
             "fpr_balance": fpr_threshold,
-            "ppr": ppr_threshold
+            "ppr": ppr_threshold,
         }
 
-    def demographic_parity(
-        self,
-        y_pred: np.ndarray,
-        sensitive_attr: np.ndarray
-    ) -> FairnessResult:
+    def demographic_parity(self, y_pred: np.ndarray, sensitive_attr: np.ndarray) -> FairnessResult:
         """
         Paridade Demográfica (Statistical Parity).
 
@@ -137,10 +133,7 @@ class FairnessMetrics:
             sample_sizes[group] = n_total
 
         # Disparidade máxima
-        if rates:
-            max_disparity = max(rates.values()) - min(rates.values())
-        else:
-            max_disparity = 0.0
+        max_disparity = max(rates.values()) - min(rates.values()) if rates else 0.0
 
         threshold = self.thresholds["demographic_parity"]
         passed = max_disparity < threshold
@@ -152,17 +145,10 @@ class FairnessMetrics:
             passed=passed,
             threshold=threshold,
             sample_sizes=sample_sizes,
-            details={
-                "description": "Igualdade de taxa de predições positivas entre grupos"
-            }
+            details={"description": "Igualdade de taxa de predições positivas entre grupos"},
         )
 
-    def equal_opportunity(
-        self,
-        y_true: np.ndarray,
-        y_pred: np.ndarray,
-        sensitive_attr: np.ndarray
-    ) -> FairnessResult:
+    def equal_opportunity(self, y_true: np.ndarray, y_pred: np.ndarray, sensitive_attr: np.ndarray) -> FairnessResult:
         """
         Igualdade de Oportunidade (Equalized Odds - TPR parity).
 
@@ -197,7 +183,7 @@ class FairnessMetrics:
             positive_mask = y_true == 1
             combined_mask = group_mask & positive_mask
 
-            n_true_positives = np.sum((y_pred[combined_mask] == 1))
+            n_true_positives = np.sum(y_pred[combined_mask] == 1)
             n_actual_positives = np.sum(combined_mask)
 
             tpr = n_true_positives / n_actual_positives if n_actual_positives > 0 else 0.0
@@ -205,10 +191,7 @@ class FairnessMetrics:
             sample_sizes[group] = n_actual_positives
 
         # Disparidade máxima
-        if tpr_rates:
-            max_disparity = max(tpr_rates.values()) - min(tpr_rates.values())
-        else:
-            max_disparity = 0.0
+        max_disparity = max(tpr_rates.values()) - min(tpr_rates.values()) if tpr_rates else 0.0
 
         threshold = self.thresholds["equal_opportunity"]
         passed = max_disparity < threshold
@@ -220,9 +203,7 @@ class FairnessMetrics:
             passed=passed,
             threshold=threshold,
             sample_sizes=sample_sizes,
-            details={
-                "description": "Igualdade de taxa de detecção de positivos reais entre grupos"
-            }
+            details={"description": "Igualdade de taxa de detecção de positivos reais entre grupos"},
         )
 
     def false_positive_rate_balance(
@@ -230,7 +211,7 @@ class FairnessMetrics:
         y_true: np.ndarray,
         y_pred: np.ndarray,
         sensitive_attr: np.ndarray,
-        critical_threshold: float = 0.05  # Mais stricto: 5% máx disparidade
+        critical_threshold: float = 0.05,  # Mais stricto: 5% máx disparidade
     ) -> FairnessResult:
         """
         Balanço de Falso Positivo (FPR Balance).
@@ -271,7 +252,7 @@ class FairnessMetrics:
             negative_mask = y_true == 0
             combined_mask = group_mask & negative_mask
 
-            n_false_positives = np.sum((y_pred[combined_mask] == 1))
+            n_false_positives = np.sum(y_pred[combined_mask] == 1)
             n_actual_negatives = np.sum(combined_mask)
 
             fpr = n_false_positives / n_actual_negatives if n_actual_negatives > 0 else 0.0
@@ -279,10 +260,7 @@ class FairnessMetrics:
             sample_sizes[group] = n_actual_negatives
 
         # Disparidade máxima
-        if fpr_rates:
-            max_disparity = max(fpr_rates.values()) - min(fpr_rates.values())
-        else:
-            max_disparity = 0.0
+        max_disparity = max(fpr_rates.values()) - min(fpr_rates.values()) if fpr_rates else 0.0
 
         threshold = self.thresholds["fpr_balance"]
         passed = max_disparity < threshold
@@ -297,15 +275,16 @@ class FairnessMetrics:
             details={
                 "description": "Igualdade de taxa de falsos positivos entre grupos (CRÍTICO para vigilância)",
                 "lgpd_article_20": "Decisões automatizadas devem garantir não-discriminação",
-                "statistical_significance": self._check_statistical_significance(fpr_rates, sample_sizes) if all(v > 0 for v in sample_sizes.values()) else None
-            }
+                "statistical_significance": (
+                    self._check_statistical_significance(fpr_rates, sample_sizes)
+                    if all(v > 0 for v in sample_sizes.values())
+                    else None
+                ),
+            },
         )
 
     def _check_statistical_significance(
-        self,
-        rates: Dict[str, float],
-        sample_sizes: Dict[str, int],
-        confidence_level: float = 0.95
+        self, rates: dict[str, float], sample_sizes: dict[str, int], confidence_level: float = 0.95
     ) -> dict:
         """
         Verifica significância estatística das diferenças de FPR.
@@ -334,7 +313,7 @@ class FairnessMetrics:
 
         # Z-test para duas proporções
         p_pooled = (p1 * n1 + p2 * n2) / (n1 + n2)
-        se = np.sqrt(p_pooled * (1 - p_pooled) * (1/n1 + 1/n2))
+        se = np.sqrt(p_pooled * (1 - p_pooled) * (1 / n1 + 1 / n2))
 
         if se > 0:
             z_stat = (p1 - p2) / se
@@ -352,14 +331,13 @@ class FairnessMetrics:
             "p_value": p_value,
             "significant": significant,
             "confidence_level": confidence_level,
-            "interpretation": "Diferença estatisticamente significativa" if significant else "Diferença pode ser ruído amostral"
+            "interpretation": (
+                "Diferença estatisticamente significativa" if significant else "Diferença pode ser ruído amostral"
+            ),
         }
 
     def predictive_rate_parity(
-        self,
-        y_true: np.ndarray,
-        y_pred: np.ndarray,
-        sensitive_attr: np.ndarray
+        self, y_true: np.ndarray, y_pred: np.ndarray, sensitive_attr: np.ndarray
     ) -> FairnessResult:
         """
         Paridade de Taxa Preditiva (Predictive Rate Parity).
@@ -395,7 +373,7 @@ class FairnessMetrics:
             pred_positive_mask = y_pred == 1
             combined_mask = group_mask & pred_positive_mask
 
-            n_true_positives = np.sum((y_true[combined_mask] == 1))
+            n_true_positives = np.sum(y_true[combined_mask] == 1)
             n_pred_positives = np.sum(combined_mask)
 
             ppv = n_true_positives / n_pred_positives if n_pred_positives > 0 else 0.0
@@ -403,10 +381,7 @@ class FairnessMetrics:
             sample_sizes[group] = n_pred_positives
 
         # Disparidade máxima
-        if ppv_rates:
-            max_disparity = max(ppv_rates.values()) - min(ppv_rates.values())
-        else:
-            max_disparity = 0.0
+        max_disparity = max(ppv_rates.values()) - min(ppv_rates.values()) if ppv_rates else 0.0
 
         threshold = self.thresholds["ppr"]
         passed = max_disparity < threshold
@@ -418,16 +393,11 @@ class FairnessMetrics:
             passed=passed,
             threshold=threshold,
             sample_sizes=sample_sizes,
-            details={
-                "description": "Igualdade de precisão dos alertas positivos entre grupos"
-            }
+            details={"description": "Igualdade de precisão dos alertas positivos entre grupos"},
         )
 
     def generate_fairness_report(
-        self,
-        predictions: Union[List, np.ndarray],
-        ground_truth: Union[List, np.ndarray],
-        sensitive_attrs: Union[List, np.ndarray]
+        self, predictions: list | np.ndarray, ground_truth: list | np.ndarray, sensitive_attrs: list | np.ndarray
     ) -> dict:
         """
         Gera relatório completo de fairness.
@@ -456,12 +426,12 @@ class FairnessMetrics:
             "demographic_parity": self.demographic_parity(y_pred, sens),
             "equal_opportunity": self.equal_opportunity(y_true, y_pred, sens),
             "fpr_balance": self.false_positive_rate_balance(y_true, y_pred, sens),
-            "predictive_rate_parity": self.predictive_rate_parity(y_true, y_pred, sens)
+            "predictive_rate_parity": self.predictive_rate_parity(y_true, y_pred, sens),
         }
 
         # Distribuição de grupos
         groups, counts = np.unique(sens, return_counts=True)
-        group_distribution = {str(g): int(c) for g, c in zip(groups, counts)}
+        group_distribution = {str(g): int(c) for g, c in zip(groups, counts, strict=False)}
 
         # Com menos de 2 grupos não há comparação possível: antes o relatório
         # aprovava trivialmente (disparidade 0). Agora não é avaliável e não aprova.
@@ -483,10 +453,10 @@ class FairnessMetrics:
             "recommendations": recommendations,
             "sample_size": len(y_pred),
             "group_distribution": group_distribution,
-            "thresholds_used": self.thresholds
+            "thresholds_used": self.thresholds,
         }
 
-    def _generate_recommendations(self, results: Dict[str, FairnessResult]) -> List[str]:
+    def _generate_recommendations(self, results: dict[str, FairnessResult]) -> list[str]:
         """Gera recomendações baseadas nos resultados."""
         recommendations = []
 
@@ -514,9 +484,7 @@ class FairnessMetrics:
                     )
 
         if not recommendations:
-            recommendations.append(
-                "Todas métricas de fairness dentro dos thresholds. Continue monitorando."
-            )
+            recommendations.append("Todas métricas de fairness dentro dos thresholds. Continue monitorando.")
 
         return recommendations
 
@@ -544,11 +512,7 @@ class BiasDetector:
             alert_operators(report)
     """
 
-    def __init__(
-        self,
-        window_size: int = 1000,
-        check_interval: int = 100
-    ):
+    def __init__(self, window_size: int = 1000, check_interval: int = 100):
         """
         Inicializa detector de viés.
 
@@ -560,9 +524,9 @@ class BiasDetector:
         self.check_interval = check_interval
 
         # Buffers circulares
-        self._predictions: List = []
-        self._ground_truth: List = []
-        self._sensitive_attrs: List = []
+        self._predictions: list = []
+        self._ground_truth: list = []
+        self._sensitive_attrs: list = []
 
         # Métricas
         self.metrics = FairnessMetrics()
@@ -572,14 +536,9 @@ class BiasDetector:
         self._last_check = 0
 
         # Histórico de reports
-        self._reports: List[dict] = []
+        self._reports: list[dict] = []
 
-    def record(
-        self,
-        prediction: int,
-        ground_truth: int,
-        sensitive_attr: Any
-    ):
+    def record(self, prediction: int, ground_truth: int, sensitive_attr: Any):
         """
         Registra predição para análise futura.
 
@@ -601,7 +560,7 @@ class BiasDetector:
             self._ground_truth.pop(0)
             self._sensitive_attrs.pop(0)
 
-    def check_bias(self) -> Optional[dict]:
+    def check_bias(self) -> dict | None:
         """
         Verifica viés nas últimas N amostras.
 
@@ -634,7 +593,7 @@ class BiasDetector:
         """Verifica se é hora de analisar bias."""
         return (self._sample_count - self._last_check) >= self.check_interval
 
-    def get_historical_trend(self, metric_name: str) -> List[float]:
+    def get_historical_trend(self, metric_name: str) -> list[float]:
         """
         Retorna tendência histórica de uma métrica.
 
@@ -644,12 +603,4 @@ class BiasDetector:
         Returns:
             Lista de max_disparity ao longo do tempo
         """
-        return [
-            r["metrics"][metric_name]["max_disparity"]
-            for r in self._reports
-            if metric_name in r["metrics"]
-        ]
-
-
-# Import necessário para BiasDetector
-from datetime import datetime
+        return [r["metrics"][metric_name]["max_disparity"] for r in self._reports if metric_name in r["metrics"]]

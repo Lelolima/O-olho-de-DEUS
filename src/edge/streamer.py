@@ -25,13 +25,11 @@ Uso:
 """
 
 import logging
-import queue
 import threading
 import time
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -46,7 +44,7 @@ class StreamStats:
     frames_read: int = 0
     frames_dropped: int = 0
     reconnects: int = 0
-    last_frame_time: Optional[datetime] = None
+    last_frame_time: datetime | None = None
     latency_avg_ms: float = 0.0
     start_time: datetime = field(default_factory=datetime.now)
 
@@ -71,7 +69,7 @@ class StreamStats:
             "reconnects": self.reconnects,
             "latency_avg_ms": self.latency_avg_ms,
             "uptime_seconds": self.uptime_seconds,
-            "fps_effective": self.fps_effective
+            "fps_effective": self.fps_effective,
         }
 
 
@@ -99,7 +97,7 @@ class RTSPStreamer:
         reconnect_delay: float = 1.0,
         max_reconnect_delay: float = 30.0,
         frame_timeout: float = 5.0,
-        validate_url: bool = True
+        validate_url: bool = True,
     ):
         """
         Inicializa RTSP Streamer.
@@ -134,13 +132,13 @@ class RTSPStreamer:
         self._queue_lock = threading.Lock()
 
         # Controles da thread
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._connected = threading.Event()
         self._connection_attempt = threading.Event()
 
         # Capture do OpenCV
-        self._cap: Optional[cv2.VideoCapture] = None
+        self._cap: cv2.VideoCapture | None = None
 
         # Estatísticas
         self.stats = StreamStats()
@@ -153,9 +151,11 @@ class RTSPStreamer:
         from src.edge.sources import STREAM_SCHEMES, parse_source
 
         self._source = parse_source(self.rtsp_url)
-        self._is_file = isinstance(self._source, str) and not self._source.startswith(
-            tuple(f"{sch}://" for sch in STREAM_SCHEMES)
-        ) and not self._source.startswith("/dev/video")
+        self._is_file = (
+            isinstance(self._source, str)
+            and not self._source.startswith(tuple(f"{sch}://" for sch in STREAM_SCHEMES))
+            and not self._source.startswith("/dev/video")
+        )
 
         # Aviso (não bloqueio): câmeras costumam ficar em rede privada
         if isinstance(self._source, str) and "://" in self._source:
@@ -203,7 +203,7 @@ class RTSPStreamer:
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=5.0)
 
-    def read_frame(self, timeout: Optional[float] = None) -> Optional[np.ndarray]:
+    def read_frame(self, timeout: float | None = None) -> np.ndarray | None:
         """
         Lê próximo frame do buffer.
 
@@ -213,24 +213,20 @@ class RTSPStreamer:
         Returns:
             Frame BGR ou None se timeout/desconectado
         """
-        wait_time = timeout if timeout is not None else self.frame_timeout
-
-        try:
+        deadline = time.monotonic() + (timeout if timeout is not None else self.frame_timeout)
+        while True:
             with self._queue_lock:
                 if self._queue:
-                    frame = self._queue.popleft()
+                    frame: np.ndarray = self._queue.popleft()
                     self.stats.frames_read += 1
                     self.stats.last_frame_time = datetime.now()
                     return frame
-                else:
-                    # Queue vazia
-                    if not self._connected.is_set():
-                        logger.debug("Stream não conectado")
-                    return None
-
-        except Exception as e:
-            logger.error(f"Erro ao ler frame: {e}")
-            return None
+            # Antes o timeout era ignorado (retornava None na hora com a fila vazia)
+            if time.monotonic() >= deadline or self.finished.is_set() or self._stop_event.is_set():
+                if not self._connected.is_set():
+                    logger.debug("Stream não conectado")
+                return None
+            time.sleep(0.005)
 
     def is_connected(self) -> bool:
         """Verifica se stream está conectado."""
@@ -238,10 +234,7 @@ class RTSPStreamer:
 
     def get_stats(self) -> dict:
         """Retorna estatísticas do stream."""
-        self.stats.frames_dropped = max(
-            0,
-            len(self._queue) - self.buffer_size
-        )
+        self.stats.frames_dropped = max(0, len(self._queue) - self.buffer_size)
         return self.stats.to_dict()
 
     def _reader_loop(self):
@@ -287,8 +280,8 @@ class RTSPStreamer:
                     self._cap = None
                 self._connected.clear()
 
-            except Exception as e:
-                logger.error(f"Erro no reader loop: {e}")
+            except Exception:
+                logger.exception("Erro no reader loop")
                 self._connected.clear()
 
             # Backoff exponencial para reconexão
@@ -375,7 +368,7 @@ class MultiStreamManager:
         for streamer in self._streamers.values():
             streamer.stop()
 
-    def read_all_frames(self) -> dict[str, Optional[np.ndarray]]:
+    def read_all_frames(self) -> dict[str, np.ndarray | None]:
         """
         Lê frames de todos os streams.
 
@@ -389,7 +382,4 @@ class MultiStreamManager:
 
     def get_all_stats(self) -> dict[str, dict]:
         """Retorna estatísticas de todos os streams."""
-        return {
-            camera_id: streamer.get_stats()
-            for camera_id, streamer in self._streamers.items()
-        }
+        return {camera_id: streamer.get_stats() for camera_id, streamer in self._streamers.items()}

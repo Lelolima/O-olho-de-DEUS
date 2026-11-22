@@ -1,7 +1,9 @@
 """HITL Decision Model - Modelo SQLAlchemy para decisões de operadores."""
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Index, Float, Integer
+
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
+
 # Mesmo Base de incident.py: a FK hitl_decisions.alert_id -> incidents.id exige
 # os modelos no mesmo MetaData (antes cada arquivo criava o seu Base).
 from .incident import Base
@@ -48,7 +50,7 @@ class HitlDecision(Base):
             "operator_id": self.operator_id,
             "decision": self.decision,
             "justification": self.justification,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 
@@ -82,8 +84,6 @@ class OperatorSession(Base):
     def is_active(self) -> bool:
         """Verifica se sessão ainda está ativa."""
         from datetime import timedelta
+
         timeout = timedelta(hours=8)
-        return (
-            self.ended_at is None and
-            datetime.utcnow() - self.last_activity < timeout
-        )
+        return self.ended_at is None and datetime.utcnow() - self.last_activity < timeout

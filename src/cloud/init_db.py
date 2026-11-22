@@ -10,12 +10,12 @@ Uso:
 import sys
 from pathlib import Path
 
+from sqlalchemy.exc import SQLAlchemyError
+
 # Adiciona src ao path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.cloud.database import create_tables, engine, DatabaseBase
-from src.cloud.models.incident import Incident, Evidence, MerkleBatch
-from src.cloud.models.hitl_decision import HitlDecision, OperatorSession
+from src.cloud.database import create_tables, engine
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
     try:
         create_tables()
         print("[OK] Tabelas criadas com sucesso!")
-    except Exception as e:
+    except SQLAlchemyError as e:
         print(f"[ERRO] Erro ao criar tabelas: {e}")
         print()
         print("Nota: Se estiver usando PostgreSQL, certifique-se de:")
@@ -44,10 +44,11 @@ def main():
     print("Verificando conexão...")
     try:
         from sqlalchemy import text
+
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         print("[OK] Conexão verificada!")
-    except Exception as e:
+    except SQLAlchemyError as e:
         print(f"[AVISO] Erro na conexão: {e}")
 
     print()
