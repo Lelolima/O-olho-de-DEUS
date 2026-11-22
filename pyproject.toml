@@ -15,6 +15,7 @@ python = ">=3.10,<3.13"
 # Visao computacional e ML
 opencv-python = "^4.8.0"
 numpy = "^1.24.0"
+scipy = "^1.11.0"
 onnxruntime = { version = "^1.15.0", optional = true }
 
 # TensorRT (NVIDIA) ou OpenVINO (Intel) - instalar apenas um
