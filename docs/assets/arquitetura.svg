@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" width="900" height="430" role="img" aria-labelledby="t d">
+  <title id="t">Arquitetura e fluxo de dados</title>
+  <desc id="d">Câmera ou vídeo alimenta o pipeline na borda (analíticos e blur de rostos). Eventos vão para o log forense com árvore Merkle e para a API HITL, onde um operador autenticado revisa. Alertas escalados disparam webhook.</desc>
+  <style>
+    :root { --bg: #ffffff; --card: #f6f8fa; --fg: #1f2328; --muted: #57606a; --line: #d0d7de;
+            --edge: #0969da; --cloud: #8250df; --sec: #1a7f37; --warn: #9a6700; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0d1117; --card: #161b22; --fg: #e6edf3; --muted: #9198a1; --line: #30363d;
+              --edge: #4493f8; --cloud: #ab7df8; --sec: #3fb950; --warn: #d29922; }
+    }
+    .bg { fill: var(--bg); stroke: var(--line); }
+    .box { fill: var(--card); stroke-width: 2; }
+    .edge { stroke: var(--edge); } .cloud { stroke: var(--cloud); } .sec { stroke: var(--sec); } .warn { stroke: var(--warn); }
+    .h { fill: var(--fg); font: 700 15px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .t { fill: var(--muted); font: 400 12.5px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .lbl { fill: var(--muted); font: 600 11px ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .zone { fill: none; stroke: var(--muted); stroke-dasharray: 6 5; }
+    .zt { fill: var(--muted); font: 700 12px system-ui, sans-serif; letter-spacing: .08em; }
+    .flow { fill: none; stroke-width: 2.5; stroke-dasharray: 8 8; animation: flow 1.2s linear infinite; }
+    .arrow { stroke-width: 0; }
+    .a-edge { fill: var(--edge); } .a-cloud { fill: var(--cloud); } .a-sec { fill: var(--sec); } .a-warn { fill: var(--warn); }
+    .blink { animation: blink 2.4s ease-in-out infinite; }
+    @keyframes flow { to { stroke-dashoffset: -32; } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+    @media (prefers-reduced-motion: reduce) { .flow, .blink { animation: none; } }
+  </style>
+  <rect class="bg" x="1" y="1" width="898" height="428" rx="14"/>
+
+  <!-- zonas -->
+  <rect class="zone" x="20" y="40" width="430" height="370" rx="10"/>
+  <text class="zt" x="34" y="30">BORDA (local, CPU)</text>
+  <rect class="zone" x="470" y="40" width="410" height="370" rx="10"/>
+  <text class="zt" x="484" y="30">SERVIDOR / OPERAÇÃO</text>
+
+  <!-- câmera -->
+  <rect class="box edge" x="40" y="70" width="170" height="78" rx="8"/>
+  <text class="h" x="54" y="96">Câmera / vídeo</text>
+  <text class="t" x="54" y="116">RTSP · HTTP · webcam</text>
+  <text class="t" x="54" y="134">arquivo .mp4/.avi</text>
+
+  <!-- pipeline -->
+  <rect class="box edge" x="40" y="190" width="390" height="120" rx="8"/>
+  <text class="h" x="54" y="216">VideoPipeline</text>
+  <text class="t" x="54" y="238">analíticos: intrusão em zona (MOG2 + agenda),</text>
+  <text class="t" x="54" y="256">contagem por linha (movimento ou HOG), objeto abandonado</text>
+  <text class="t" x="54" y="274">detecção de rosto só para borrar (Haar / ONNX opcional)</text>
+  <text class="lbl" x="54" y="296">sem embeddings · sem identificação de pessoas</text>
+
+  <!-- log forense -->
+  <rect class="box sec" x="40" y="340" width="390" height="56" rx="8"/>
+  <text class="h" x="54" y="364">Log forense</text>
+  <text class="t" x="150" y="364">evidências JSON + lote Merkle (TSA opcional)</text>
+  <text class="lbl blink" x="54" y="384">prova de integridade verificável</text>
+
+  <!-- API -->
+  <rect class="box cloud" x="490" y="70" width="370" height="120" rx="8"/>
+  <text class="h" x="504" y="96">API HITL (FastAPI)</text>
+  <text class="t" x="504" y="118">login JWT · OPERATOR_USERS com hash PBKDF2</text>
+  <text class="t" x="504" y="136">limite de tentativas · todas as rotas autenticadas</text>
+  <text class="t" x="504" y="154">alertas · evidências (SHA-256) · decisões HITL</text>
+  <text class="lbl" x="504" y="176">SQLite por padrão · PostgreSQL via DATABASE_URL</text>
+
+  <!-- operador -->
+  <rect class="box sec" x="490" y="230" width="370" height="80" rx="8"/>
+  <text class="h" x="504" y="256">Operador (revisão humana)</text>
+  <text class="t" x="504" y="278">descartar ou escalar · decisão atribuída ao token</text>
+  <text class="t" x="504" y="296">nenhuma ação automática sem revisão (exceto score ≥ 0,95)</text>
+
+  <!-- webhook -->
+  <rect class="box warn" x="490" y="340" width="370" height="56" rx="8"/>
+  <text class="h" x="504" y="364">Webhook (WEBHOOK_URL)</text>
+  <text class="t" x="504" y="384">notifica sistema externo quando um alerta é escalado</text>
+
+  <!-- fluxos -->
+  <path class="flow edge" d="M125 148 L125 190"/>
+  <polygon class="arrow a-edge" points="119,182 131,182 125,192"/>
+  <path class="flow sec" d="M235 310 L235 340"/>
+  <polygon class="arrow a-sec" points="229,332 241,332 235,342"/>
+  <path class="flow cloud" d="M430 230 L460 230 L460 130 L490 130"/>
+  <polygon class="arrow a-cloud" points="482,124 482,136 492,130"/>
+  <text class="lbl" x="398" y="248">eventos</text>
+  <path class="flow sec" d="M675 190 L675 230"/>
+  <polygon class="arrow a-sec" points="669,222 681,222 675,232"/>
+  <path class="flow warn" d="M675 310 L675 340"/>
+  <polygon class="arrow a-warn" points="669,332 681,332 675,342"/>
+  <text class="lbl" x="684" y="330">escalado</text>
+</svg>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 200" width="900" height="200" role="img" aria-labelledby="t d">
+  <title id="t">O Olho de Deus v3</title>
+  <desc id="d">Banner: analítica de vídeo na borda com privacidade, revisão humana e cadeia de custódia.</desc>
+  <style>
+    :root { --bg: #f6f8fa; --fg: #1f2328; --muted: #57606a; --accent: #0969da; --ok: #1a7f37; --line: #d0d7de; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --accent: #4493f8; --ok: #3fb950; --line: #30363d; }
+    }
+    .bg { fill: var(--bg); stroke: var(--line); }
+    .title { fill: var(--fg); font: 700 38px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .sub { fill: var(--muted); font: 400 17px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .tag { fill: var(--accent); font: 600 13px ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .eye { fill: none; stroke: var(--accent); stroke-width: 4; }
+    .iris { fill: var(--accent); transform-origin: 120px 100px; animation: look 6s ease-in-out infinite; }
+    .scan { stroke: var(--ok); stroke-width: 2; opacity: .8; animation: scan 3s linear infinite; }
+    .dot { fill: var(--ok); animation: pulse 1.6s ease-in-out infinite; transform-origin: 866px 40px; }
+    @keyframes look { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-12px); } 60% { transform: translateX(12px); } }
+    @keyframes scan { from { transform: translateY(-38px); } to { transform: translateY(38px); } }
+    @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: .4; } }
+    @media (prefers-reduced-motion: reduce) { .iris, .scan, .dot { animation: none; } }
+  </style>
+  <rect class="bg" x="1" y="1" width="898" height="198" rx="14"/>
+  <g>
+    <path class="eye" d="M40 100 Q120 30 200 100 Q120 170 40 100 Z"/>
+    <circle class="iris" cx="120" cy="100" r="22"/>
+    <clipPath id="c"><path d="M40 100 Q120 30 200 100 Q120 170 40 100 Z"/></clipPath>
+    <g clip-path="url(#c)"><line class="scan" x1="40" y1="100" x2="200" y2="100"/></g>
+  </g>
+  <text class="title" x="230" y="88">O Olho de Deus v3</text>
+  <text class="sub" x="230" y="120">Analítica de vídeo na borda com privacidade, revisão humana e cadeia de custódia</text>
+  <text class="tag" x="230" y="155">intrusão em zona · contagem · objeto abandonado · blur de rostos · Merkle · HITL</text>
+  <circle class="dot" cx="866" cy="40" r="6"/>
+  <text class="tag" x="880" y="68" text-anchor="end">CPU · roda localmente</text>
+</svg>
