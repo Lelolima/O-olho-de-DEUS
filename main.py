@@ -83,6 +83,7 @@ def setup_logging(level: str = "INFO", log_file: str | None = None) -> None:
 
 def build_pipeline(config: dict[str, Any], camera_id: str):
     """Monta o ``VideoPipeline`` a partir da configuração."""
+    from src.edge.analytics import build_analyzers
     from src.edge.pipeline import VideoPipeline
     from src.edge.processor import create_processor_from_config
     from src.forensic.logger import ForensicLogger
@@ -102,7 +103,7 @@ def build_pipeline(config: dict[str, Any], camera_id: str):
 
     return VideoPipeline(
         camera_id=camera_id,
-        analyzers=[],
+        analyzers=build_analyzers(config.get("analytics")),
         processor=processor,
         forensic_logger=forensic_logger,
         face_event_min_faces=int(edge_cfg.get("face_event_min_faces", 1)),

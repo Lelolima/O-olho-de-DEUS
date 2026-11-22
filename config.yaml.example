@@ -22,6 +22,22 @@ cameras:
     location: "Entrada Principal"
   # Adicione mais câmeras conforme necessário
 
+# Analíticos de vídeo (opcionais; coordenadas normalizadas 0-1 do frame).
+# Veja examples/ para cenários completos.
+analytics:
+  zone_intrusion:
+    name: "patio"
+    zone: [[0.0, 0.0], [0.5, 0.0], [0.5, 1.0], [0.0, 1.0]]
+    active_hours: [["19:00", "07:00"]]   # só alerta fora do expediente
+    cooldown_seconds: 30
+  # people_counter:
+  #   line: [[0.5, 0.0], [0.5, 1.0]]     # entrada = esquerda -> direita na imagem
+  #   detector: motion                   # ou hog (detector de pessoas do OpenCV)
+  #   hog_resize: 1.0                    # >1 para pessoas pequenas/distantes
+  #   max_occupancy: 20
+  # abandoned_object:
+  #   min_static_seconds: 60
+
 # Configurações Forensic Logging
 forensic:
   log_dir: "./forensic_logs"
