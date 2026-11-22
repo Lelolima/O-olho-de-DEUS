@@ -101,7 +101,7 @@ Antes de abrir PR:
 - [ ] `.env.example` é apenas template (sem segredos reais)
 - [ ] `.gitignore` inclui `.env`, `*.key`, `*.log`
 - [ ] Tests passam: `pytest tests/`
-- [ ] Syntax válida: `python scripts/verify_syntax.py`
+- [ ] Syntax válida: `ruff check src tests main.py`
 - [ ] Mensagem de commit descritiva
 
 ---
