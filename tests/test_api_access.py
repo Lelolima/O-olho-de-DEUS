@@ -8,8 +8,8 @@ from starlette.websockets import WebSocketDisconnect
 
 os.environ.setdefault("USE_SQLITE", "true")
 
-from src.cloud.api.middleware import auth as auth_mod  # noqa: E402
-from src.cloud.api.middleware.auth import hash_password  # noqa: E402
+from src.cloud.api.middleware import auth as auth_mod
+from src.cloud.api.middleware.auth import hash_password
 
 PROTECTED = [
     ("get", "/api/v1/alerts/"),
@@ -30,9 +30,7 @@ def client():
     from src.hitl.dashboard_server import app
 
     saved = auth_mod.operator_auth._users
-    auth_mod.operator_auth._users = {
-        "op": {"role": "operator", "password_hash": hash_password("pw", iterations=1000)}
-    }
+    auth_mod.operator_auth._users = {"op": {"role": "operator", "password_hash": hash_password("pw", iterations=1000)}}
     with TestClient(app) as c:
         yield c
     auth_mod.operator_auth._users = saved
@@ -75,9 +73,8 @@ def test_hitl_decision_is_attributed_to_token_operator(client, token):
 
 
 def test_websocket_rejects_missing_token(client):
-    with pytest.raises(WebSocketDisconnect) as exc:
-        with client.websocket_connect("/api/v1/alerts/ws/live") as ws:
-            ws.receive_json()
+    with pytest.raises(WebSocketDisconnect) as exc, client.websocket_connect("/api/v1/alerts/ws/live") as ws:
+        ws.receive_json()
     assert exc.value.code == 1008
 
 

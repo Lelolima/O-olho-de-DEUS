@@ -1,10 +1,11 @@
 """Testes para Edge AI Processor."""
 
 import unittest
+
 import numpy as np
+
 from src.edge.processor import EdgeAIProcessor, FaceDetection
-from src.edge.streamer import RTSPStreamer
-from src.privacy.masker import DynamicMasker, BoundingBox
+from src.privacy.masker import BoundingBox, DynamicMasker
 
 
 class TestEdgeAIProcessor(unittest.TestCase):
@@ -43,11 +44,7 @@ class TestEdgeAIProcessor(unittest.TestCase):
 
     def test_face_detection_to_dict(self):
         """Testa serialização de FaceDetection."""
-        face = FaceDetection(
-            bounding_box=(10, 10, 50, 50),
-            confidence=0.95,
-            embedding=np.random.rand(512)
-        )
+        face = FaceDetection(bounding_box=(10, 10, 50, 50), confidence=0.95, embedding=np.random.rand(512))
 
         data = face.to_dict()
 

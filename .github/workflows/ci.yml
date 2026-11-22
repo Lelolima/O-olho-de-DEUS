@@ -24,11 +24,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-ci.txt
-      - name: Lint
-        run: ruff check --select E9,F63,F7,F82 src tests main.py
+      - name: Lint e formatação
+        run: |
+          ruff check src tests main.py
+          ruff format --check src tests main.py
+      - name: Tipagem (módulos centrais)
+        run: >
+          mypy src/edge src/forensic src/privacy src/tools src/envfile.py
+          src/cloud/api/middleware/auth.py main.py
+          --ignore-missing-imports --follow-imports=silent
       - name: Build
         run: |
           python -m compileall -q src main.py
           python -c "import src.hitl.dashboard_server"
       - name: Testes
-        run: python -m pytest -q -p no:cacheprovider -o addopts=""
+        run: python -m pytest -q -p no:cacheprovider --cov=src --cov-report=term --cov-fail-under=70

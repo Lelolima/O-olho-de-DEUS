@@ -6,7 +6,7 @@ import unittest
 
 os.environ.setdefault("USE_SQLITE", "true")
 
-from src.cloud.api.middleware.auth import (  # noqa: E402
+from src.cloud.api.middleware.auth import (
     OperatorAuth,
     _load_users_from_env,
     hash_password,
@@ -40,8 +40,10 @@ class TestOperatorAuth(unittest.TestCase):
 
     def test_users_loaded_from_env(self):
         os.environ["OPERATOR_USERS"] = json.dumps(
-            {"op": {"role": "operator", "password_hash": hash_password("pw", iterations=1000)},
-             "bad": {"role": "operator", "password": "texto-puro"}}
+            {
+                "op": {"role": "operator", "password_hash": hash_password("pw", iterations=1000)},
+                "bad": {"role": "operator", "password": "texto-puro"},
+            }
         )
         try:
             users = _load_users_from_env()
@@ -100,9 +102,7 @@ class TestApiAuth(unittest.TestCase):
         payload = {"camera_id": "CAM-1", "alarm_score": 0.5}
         r = self.client.post("/api/v1/alerts/", json=payload)
         self.assertEqual(r.status_code, 401)
-        r = self.client.post(
-            "/api/v1/alerts/", json=payload, headers={"Authorization": "Bearer invalido"}
-        )
+        r = self.client.post("/api/v1/alerts/", json=payload, headers={"Authorization": "Bearer invalido"})
         self.assertEqual(r.status_code, 401)
 
     def test_login_then_token_accepted(self):
@@ -110,7 +110,8 @@ class TestApiAuth(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         token = r.json()["access_token"]
         r = self.client.post(
-            "/api/v1/alerts/", json={"camera_id": "CAM-1", "alarm_score": 0.5},
+            "/api/v1/alerts/",
+            json={"camera_id": "CAM-1", "alarm_score": 0.5},
             headers={"Authorization": f"Bearer {token}"},
         )
         # Autenticação passou (não 401); validação/negócio decide o restante
