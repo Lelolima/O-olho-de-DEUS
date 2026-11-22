@@ -161,105 +161,63 @@ Este software é **apenas para fins educacionais e de pesquisa**. O uso em ambie
 
 ---
 
-## 📦 Instalação
+## 📦 Instalação (v3 — código em `src/`)
 
-### 🎯 Instalação Rápida (Windows)
+> A versão 2 (`security_system.py`, `instalar.bat`, `config.json`) está em `LEGADO_v2.0.0/`.
+> O repositório **Project-Eyes-of-God-2.9** contém essa mesma versão legada.
 
-1. **Baixe o projeto**
-```powershell
-git clone [https://github.com/Lelolima/O-olho-de-DEUS.git]
-cd Project-Eyes-of-God
-```
-
-2. **Execute o instalador**
-```powershell
-.\instalar.bat
-```
-
-3. **Valide a instalação**
-```powershell
-.\validar.bat
-```
-
-### 🐧 Instalação Manual (Linux/Mac)
+Requer Python 3.9–3.12 (validado em 3.11).
 
 ```bash
-# 1. Clone o repositório
-git clone [https://github.com/Lelolima/O-olho-de-DEUS.git]
-cd Project-Eyes-of-God
+git clone https://github.com/Lelolima/O-olho-de-DEUS.git
+cd O-olho-de-DEUS
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
-# 2. Crie ambiente virtual (recomendado)
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate  # Windows
+pip install poetry && poetry install -E cloud -E edge
+# ou, sem Poetry (mesmo conjunto usado no CI):
+pip install -r requirements-ci.txt
 
-# 3. Instale dependências
-pip install -r requirements.txt
-
-# 4. Configure (opcional)
-cp config.json config.local.json
-# Edite config.local.json conforme necessário
-
-# 5. Execute
-python src/security_system.py
+cp .env.example .env
+cp config.yaml.example config.yaml
 ```
+
+### Executar
+
+```bash
+python main.py --config config.yaml --mode api     # API HITL (FastAPI) em :8000, docs em /docs
+python main.py --config config.yaml --mode edge    # processamento de câmeras (requer câmera/RTSP)
+```
+
+Sem PostgreSQL, use `USE_SQLITE=true` (cria `olho_de_deus.db` local).
 
 ---
 
 ## ⚙️ Configuração
 
-Edite `config.json`:
+### Variáveis de ambiente principais (`.env.example`)
 
-```json
-{
-  "security_level": "medium",
-  "video_sources": [
-    "0",
-    "rtsp://192.168.1.100:554/stream",
-    "http://camera-ip/mjpeg"
-  ],
-  "notification_emails": ["seguranca@empresa.com"],
-  "notification_webhook": "https://hooks.slack.com/...",
-  "log_level": "INFO",
-  "confidence_threshold": 0.7,
-  "incident_retention_days": 30
-}
-```
+| Variável | Uso |
+|----------|-----|
+| `OPERATOR_USERS` | **Obrigatória para login.** JSON `{"usuario": {"role": "operator", "password_hash": "pbkdf2_sha256$..."}}`. Gere o hash com `python -m src.cloud.api.middleware.auth "<senha>"`. Não há mais usuários/senhas padrão no código. |
+| `JWT_SECRET` | Segredo do JWT. Se ausente, é gerado um temporário (tokens invalidam ao reiniciar). |
+| `DATABASE_URL` / `USE_SQLITE` | PostgreSQL ou SQLite local |
+| `ENCRYPTION_KEY` | Chave Fernet para dados sensíveis |
+| `CORS_ORIGINS`, `API_HOST`, `API_PORT`, `LOG_LEVEL` | API |
 
-### Fontes de Vídeo Suportadas
-
-| Tipo | Exemplo | Descrição |
-|------|---------|-----------|
-| Webcam | `"0"` | Câmera USB padrão |
-| Múltiplas Webcams | `"0", "1", "2"` | Índices diferentes |
-| Arquivo de vídeo | `"video.mp4"` | Playback de arquivo |
-| Câmera IP (RTSP) | `"rtsp://user:pass@ip:554/stream"` | Stream RTSP |
-| Câmera HTTP | `"http://ip/mjpeg"` | MJPEG sobre HTTP |
+Demais parâmetros (câmeras, thresholds, TSA) ficam em `config.yaml`.
 
 ---
 
 ## 🧪 Testes
 
 ```bash
-# Executar testes unitários
-python -m pytest tests/ -v
-
-# Executar validação de instalação
-python tests/validate_install.py
-
-# Verificar sintaxe
-python -m py_compile src/security_system.py
+USE_SQLITE=true python -m pytest -q -o addopts=""
+ruff check --select E9,F63,F7,F82 src tests main.py
 ```
 
-### Cobertura de Testes
-
-| Módulo | Testes | Cobertura |
-|--------|--------|-----------|
-| ConfigManager | 3 | ✅ 100% |
-| SecureDataHandler | 4 | ✅ 100% |
-| AISecuritySystem | 6 | ✅ 85% |
-| Integration | 1 | ✅ 100% |
+Os testes usam dados sintéticos; não exigem câmera, GPU nem modelos ONNX.
+O CI (`.github/workflows/ci.yml`) roda lint, compilação/import da API e testes.
 
 ---
 
@@ -309,6 +267,8 @@ pip install tensorflow-cpu
 ---
 
 ## 📊 Benchmarks
+
+> ⚠️ Valores não verificados na auditoria de 2026-11-22 (sem script de benchmark no repositório).
 
 | Hardware | FPS | CPU | RAM | Câmeras |
 |----------|-----|-----|-----|---------|
