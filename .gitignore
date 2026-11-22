@@ -58,3 +58,6 @@ htmlcov/
 # Gerados em execução
 *.db
 forensic_logs/
+
+# Vídeos locais usados pelo docker compose (perfil edge)
+videos/

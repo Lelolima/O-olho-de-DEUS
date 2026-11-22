@@ -117,15 +117,16 @@ class NotificationService:
         # Em produção, implementar SMTP real
         # Por enquanto, log apenas
 
-        logger.info(
-            f"Email seria enviado para {self.config.email_recipients}: "
+        logger.warning(
+            f"Email NÃO enviado (não implementado) para {len(self.config.email_recipients)} destinatário(s): "
             f"Alerta {alert_data.get('id')} - Score {alert_data.get('alarm_score')}"
         )
 
+        # Antes retornava success=True sem enviar nada (contador de "enviados" mentia)
         return {
-            "success": True,
+            "success": False,
             "recipients": self.config.email_recipients,
-            "note": "Email não implementado - requer configuração SMTP",
+            "error": "Email não implementado - requer configuração SMTP",
         }
 
     async def _send_sms(self, alert_data: dict) -> dict:

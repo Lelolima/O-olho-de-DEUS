@@ -153,8 +153,9 @@ def run_api_mode(config: dict[str, Any]) -> int:
     from src.hitl.dashboard_server import app
 
     api_cfg = config.get("api", {})
-    host = api_cfg.get("host", "127.0.0.1")
-    port = int(api_cfg.get("port", 8000))
+    # Variáveis de ambiente têm prioridade (ex.: API_HOST=0.0.0.0 dentro do contêiner)
+    host = os.environ.get("API_HOST") or api_cfg.get("host", "127.0.0.1")
+    port = int(os.environ.get("API_PORT") or api_cfg.get("port", 8000))
     logger.info(f"Iniciando API em {host}:{port}")
     uvicorn.run(app, host=host, port=port)
     return 0

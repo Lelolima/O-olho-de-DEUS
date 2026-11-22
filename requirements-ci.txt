@@ -1,23 +1,11 @@
-# Dependências para CI/testes (validadas localmente em 2026-11-22, Python 3.11).
-# Fonte canônica continua sendo pyproject.toml (Poetry).
-opencv-python-headless==4.11.0.86
-numpy==1.26.4
-scikit-learn==1.9.1
-cryptography==50.0.2
-PyJWT==2.15.1
-requests==2.34.2
-PyYAML==6.0.4
-aiohttp==3.14.5
-fastapi==0.165.0
-uvicorn==0.54.0
-python-multipart==0.0.34
-SQLAlchemy==2.1.9
+# Execução + ferramentas de teste/qualidade usadas no CI.
+-r requirements.txt
 httpx==0.28.1
 pytest==9.2.0
 pytest-asyncio==1.5.0
-ruff==0.17.6
 pytest-cov==7.1.0
 coverage==7.17.4
+ruff==0.17.6
 mypy==2.4.1
 types-requests==2.33.0.20261030
 types-PyYAML==6.0.12.20261122

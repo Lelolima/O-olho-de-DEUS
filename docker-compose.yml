@@ -1,64 +1,52 @@
-# Docker Compose - Desenvolvimento
-version: '3.8'
-
+# Ambiente local: API HITL + PostgreSQL (e, opcionalmente, o modo edge).
+#
+#   python -m src.tools.bootstrap_env --operator admin --role admin   # cria .env
+#   echo "POSTGRES_PASSWORD=<senha-forte>" >> .env
+#   docker compose up -d --build                 # API em http://127.0.0.1:8000
+#   docker compose --profile edge up edge        # processa ./videos/entrada.mp4 (ou EDGE_VIDEO=arquivo)
+#
+# Não há serviço de produção/deploy aqui.
 services:
-  # Edge AI Processor
-  edge:
-    build:
-      context: ..
-      dockerfile: docker/edge/Dockerfile
-    environment:
-      - LOG_LEVEL=INFO
-      - TSA_URL=https://freetsa.org/tsr
-    volumes:
-      - ./forensic_logs:/app/forensic_logs
-      - ./evidence:/app/evidence
-    network_mode: host
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-
-  # PostgreSQL
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     environment:
       POSTGRES_DB: olho_de_deus
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: olho
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U olho -d olho_de_deus"]
+      interval: 5s
+      retries: 10
 
-  # API Cloud (HITL)
   api:
     build:
-      context: ..
-      dockerfile: docker/edge/Dockerfile
-    command: ["python", "main.py", "--config", "config.yaml", "--mode", "api"]
+      context: .
+      dockerfile: docker/Dockerfile
+    env_file: .env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/olho_de_deus
-      - JWT_SECRET=dev-secret-change-in-production
+      API_HOST: 0.0.0.0
+      DATABASE_URL: postgresql://olho:${POSTGRES_PASSWORD}@postgres:5432/olho_de_deus
     ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
-
-  # Frontend Dashboard (desenvolvimento)
-  frontend:
-    image: node:18-alpine
-    working_dir: /app
-    command: npm run dev -- --host
+      - "127.0.0.1:8000:8000"   # só na máquina local; exponha via proxy com TLS
     volumes:
-      - ./frontend:/app
-    ports:
-      - "3000:3000"
+      - forensic_data:/app/forensic_logs
     depends_on:
-      - api
+      postgres:
+        condition: service_healthy
+
+  edge:
+    profiles: ["edge"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    env_file: .env
+    command: ["python", "main.py", "--config", "config.yaml", "--mode", "edge", "--source", "/videos/${EDGE_VIDEO:-entrada.mp4}"]
+    volumes:
+      - ./videos:/videos:ro
+      - forensic_data:/app/forensic_logs
 
 volumes:
   postgres_data:
+  forensic_data:

@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from .models.hitl_decision import HitlDecision
-from .models.incident import Evidence, Incident, MerkleBatch
+from .models.incident import Base, Evidence, Incident, MerkleBatch
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +56,6 @@ else:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base para modelos (antes: Incident.__class__.metadata -> AttributeError na importação)
-from .models.incident import Base  # noqa: E402
-
 DatabaseBase = Base.metadata
 
 
