@@ -1,324 +1,275 @@
-# 👁️ O-olho-de-DEUS v3.0.1
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="O Olho de Deus v3: analítica de vídeo na borda com privacidade, revisão humana e cadeia de custódia" width="900">
+</p>
 
-Sistema de Vigilância com IA - Arquitetura Edge-to-Cloud com Privacy by Design.
+<p align="center">
+  <a href="https://github.com/Lelolima/O-olho-de-DEUS/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Lelolima/O-olho-de-DEUS/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Python 3.10–3.12" src="https://img.shields.io/badge/python-3.10%E2%80%933.12-blue">
+  <img alt="Licença MIT" src="https://img.shields.io/badge/licen%C3%A7a-MIT-green">
+</p>
 
-> **Demonstração Interativa:** As animações SVG abaixo demonstram a arquitetura v3.0.1 com Edge AI, HITL Dashboard e Forensic Logging.
+Sistema de **monitoramento de câmeras com analítica de vídeo na borda**. Ele detecta intrusão
+em áreas restritas (com agenda de horário), conta pessoas que cruzam uma linha virtual,
+alerta lotação e objetos abandonados, e borra rostos antes de salvar qualquer imagem. Cada
+evento entra num **log forense encadeado (árvore Merkle)**. Alertas vão para uma **API de
+revisão humana (HITL)** com login seguro, onde um operador decide descartar ou escalar.
 
----
+**O que ele não é:** não faz reconhecimento facial nem identifica pessoas. A detecção de rosto
+existe apenas para **borrar**, e embeddings faciais não são gravados nem enviados.
 
-## 🎬 Demos Visuais
+> A versão 2 (legada) está em [`LEGADO_v2.0.0/`](LEGADO_v2.0.0/) e no repositório
+> [Project-Eyes-of-God-2.9](https://github.com/Lelolima/Project-Eyes-of-God-2.9).
 
-### 🏗️ Arquitetura Edge-to-Cloud
+## Sumário
 
-<details>
-<summary><b>🖱️ Clique para ver a arquitetura completa</b></summary>
-<br>
+[Arquitetura](#arquitetura) · [Instalação](#instalação) · [Configuração](#configuração) ·
+[Uso](#uso) · [Exemplos](#exemplos-de-casos-reais) · [Privacidade e LGPD](#privacidade-e-lgpd) ·
+[Limitações](#limitações-reais) · [Desenvolvimento](#desenvolvimento-e-qualidade)
 
-![Arquitetura Edge-to-Cloud](assets/arquitetura-edge-cloud.svg)
+## Arquitetura
 
-**Camadas do sistema:**
+<p align="center">
+  <img src="docs/assets/arquitetura.svg" alt="Fluxo de dados: câmera → pipeline na borda → log forense e API HITL → operador → webhook" width="900">
+</p>
 
-| Camada | Componentes | Tecnologias |
-|--------|-------------|-------------|
-| **📡 Edge Layer** | Câmeras RTSP, Edge AI Processor, Dynamic Masking | YOLOv8-Face, FaceNet 512, TensorRT/OpenVINO |
-| **☁️ Cloud Layer** | Kafka/PubSub, PostgreSQL + pgvector, S3/GCS | FastAPI, SQLAlchemy, pgvector |
-| **🔒 Forensic** | Merkle Tree, Timestamp Authority | RFC 3161, FreeTSA, SHA-256 |
-| **🖥️ HITL** | Dashboard, Triagem Humana | WebSocket, OAuth2/JWT |
-| **⚖️ Fairness** | Monitoramento de Viés | Demographic Parity, FPR Balance |
+| Camada | Módulos | Função |
+|---|---|---|
+| Fontes | `src/edge/sources.py`, `streamer.py` | Abre webcam (`"0"`), arquivo, `rtsp://` (FFmpeg; GStreamer se o OpenCV tiver) e `http(s)://`. Credenciais da URL nunca vão para o log |
+| Pipeline | `src/edge/pipeline.py` | Frame → analisadores → eventos → log forense. Horário do evento derivado do FPS em arquivos |
+| Analíticos | `src/edge/analytics.py` | `ZoneIntrusionDetector` (MOG2 + polígono + agenda), `PeopleCounter` (movimento ou **HOG do OpenCV**), `AbandonedObjectDetector` |
+| Privacidade | `src/edge/processor.py`, `src/privacy/` | Detecção de rosto (Haar; ONNX opcional) só para borrar; criptografia Fernet com rotação; registro de base legal |
+| Cadeia de custódia | `src/forensic/` | Lotes de evidência com raiz Merkle e prova de inclusão; carimbo RFC 3161 opcional |
+| API HITL | `src/hitl/dashboard_server.py`, `src/cloud/` | FastAPI, JWT, `OPERATOR_USERS` com hash PBKDF2, limite de tentativas, alertas, evidências (SHA-256), decisões, WebSockets |
+| Notificação | `src/cloud/services/notification_service.py` | Webhook (`WEBHOOK_URL`) quando um alerta é escalado ou é crítico |
 
-**Inovações v3.0.1:**
-- ✅ Apenas metadados JSON sobem para cloud (sem frames brutos)
-- ✅ Dynamic Masking: rostos borrados na borda (Privacy by Design)
-- ✅ Merkle Tree + TSA: cadeia de custódia imutável
-- ✅ HITL obrigatório antes de notificar autoridades
-- ✅ Fairness monitoring contínuo
+## Instalação
 
-</details>
-
----
-
-### 🔍 Fluxo de Detecção Edge
-
-<details>
-<summary><b>🖱️ Clique para ver o pipeline Edge AI</b></summary>
-<br>
-
-![Fluxo Edge Detection](assets/fluxo-edge-detection.svg)
-
-**Pipeline de processamento:**
-1. **📡 Streams RTSP** - 4-8 câmeras simultâneas
-2. **🎯 YOLOv8-Face** - Detecção facial em tempo real (30 FPS)
-3. **🧠 FaceNet 512** - Extração de embeddings (512-dim vector)
-4. **🔒 Dynamic Masking** - Gaussian Blur σ=99 na borda
-5. **📄 Metadata JSON** - Apenas metadados sobem (sem frame bruto)
-6. **⚖️ Threshold Decision** - LOW (drop) | MEDIUM (log) | HIGH (cloud + HITL)
-
-**Performance:**
-| Métrica | Valor |
-|---------|-------|
-| FPS | 30 @ 1080p |
-| Latência | ~33ms |
-| Embeddings | 512-dim |
-| Banda | 99% menor (sem frames brutos) |
-| Câmeras | 4-8 por thread |
-
-**Two-Key Unblur:**
-- Chave 1: `alarm_score ≥ 0.98`
-- Chave 2: `HITL approve`
-- → Desofusca ROI do rosto
-
-</details>
-
----
-
-### 🖥️ HITL Dashboard
-
-<details>
-<summary><b>🖱️ Clique para ver o painel de triagem</b></summary>
-<br>
-
-![HITL Dashboard](assets/dashboard-hitl.svg)
-
-**Funcionalidades:**
-- 🔔 **WebSocket** - Alertas push em tempo real
-- 📊 **Fila de Alertas** - Priorização por score
-- 📈 **Estatísticas 24h** - Total, revisados, escalonados, descartados
-- ⚖️ **Fairness Widget** - Demographic parity, FPR balance
-- 🔒 **Two-Key Unblur** - score ≥ 0.98 + HITL approve
-
-**Atalhos de teclado:**
-| Tecla | Ação |
-|-------|------|
-| `E` | Escalar (notificar authorities) |
-| `D` | Descartar (falso positivo) |
-| `U` | Unblur (requer duas chaves) |
-| `L` | Ver logs forenses |
-
-**Métricas de HITL:**
-- Tempo médio de revisão: ~23s
-- Alertas revisados (24h): 42
-- Escalonados: 8
-- Descartados: 34
-
-</details>
-
----
-
-### 🚨 Fluxo de Alerta
-
-<details>
-<summary><b>🖱️ Clique para ver o fluxo de alerta</b></summary>
-<br>
-
-![Alerta Segurança](assets/alerta-seguranca-v3.svg)
-
-**Pipeline de alerta:**
-1. **📹 Detecção** - YOLOv8-Face identifica rostos
-2. **🧠 Edge AI** - FaceNet extrai embeddings
-3. **⚖️ Threshold** - score ≥ 0.85 dispara alerta
-4. **👤 HITL Review** - Operador valida antes de notificar
-5. **🔔 Notifica** - Authorities + Logs forenses
-
-**Métricas:**
-| Métrica | Valor |
-|---------|-------|
-| Tempo Detecção | ~33ms |
-| Threshold | 0.85 |
-| Review HITL | ~23s médio |
-| True Positives (24h) | 8 |
-| False Positives | 34 |
-| Precisão | 19% |
-
-</details>
-
----
-
-## ⚠️ Aviso Legal Importante
-
-Este software é **apenas para fins educacionais e de pesquisa**. O uso em ambientes reais requer:
-
-- Aprovação legal conforme LGPD (Lei Geral de Proteção de Dados)
-- Consentimento explícito das pessoas monitoradas
-- Compliance com leis locais de privacidade e vigilância
-- Revisão jurídica antes de qualquer implantação
-
----
-
-## 🚀 Funcionalidades
-
-| Funcionalidade | Descrição | Status |
-|---------------|-----------|--------|
-| **Edge AI** | YOLOv8-Face + FaceNet 512 na borda | ✅ Produção |
-| **Dynamic Masking** | Blur de rostos na borda (Privacy by Design) | ✅ Produção |
-| **Múltiplas Câmeras** | 4-8 streams RTSP simultâneos | ✅ Produção |
-| **Merkle Tree** | Cadeia de custódia imutável | ✅ Produção |
-| **Timestamp Authority** | RFC 3161 via FreeTSA | ✅ Produção |
-| **HITL Dashboard** | Triagem humana via WebSocket | ✅ Produção |
-| **Fairness Monitoring** | Demographic parity, FPR balance | ✅ Produção |
-| **PostgreSQL + pgvector** | Persistência + embeddings faciais | ✅ Produção |
-| **Two-Key Unblur** | score ≥ 0.98 + HITL approve | ✅ Produção |
-| **Alertas Automáticos** | Email + Webhook + SMS | ✅ Produção |
-
----
-
-## 📦 Instalação (v3 — código em `src/`)
-
-> A versão 2 (`security_system.py`, `instalar.bat`, `config.json`) está em `LEGADO_v2.0.0/`.
-> O repositório **Project-Eyes-of-God-2.9** contém essa mesma versão legada.
-
-Requer Python 3.9–3.12 (validado em 3.11).
+Requer Python 3.10–3.12. Testado em 3.11 no Windows e no Ubuntu (CI).
 
 ```bash
 git clone https://github.com/Lelolima/O-olho-de-DEUS.git
 cd O-olho-de-DEUS
 python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install -r requirements.txt      # execução (versões fixadas)
+pip install -r requirements-ci.txt   # + testes, lint e tipagem
+```
 
-pip install poetry && poetry install -E cloud -E edge
-# ou, sem Poetry (mesmo conjunto usado no CI):
-pip install -r requirements-ci.txt
+<details>
+<summary><b>Com Docker (API + PostgreSQL)</b></summary>
 
-cp .env.example .env
+```bash
+python -m src.tools.bootstrap_env --operator admin --role admin   # cria .env (pede a senha)
+echo "POSTGRES_PASSWORD=<uma-senha-forte>" >> .env
+docker compose up -d --build                 # API em http://127.0.0.1:8000
+mkdir videos && cp sua_gravacao.mp4 videos/entrada.mp4
+docker compose --profile edge up edge        # processa ./videos/entrada.mp4
+```
+
+A imagem roda como usuário não-root. A porta só é publicada em `127.0.0.1`: para acesso
+externo, use um proxy reverso com TLS. Validado localmente com Docker 29: health 200, login,
+alerta gravado no PostgreSQL e contêiner `healthy`.
+</details>
+
+## Configuração
+
+### 1. Segredos e o primeiro operador
+
+```bash
+python -m src.tools.bootstrap_env --operator admin --role admin
+```
+
+O comando pede a senha (mínimo 12 caracteres, sem eco no terminal) e grava um `.env` com
+`JWT_SECRET`, `ENCRYPTION_KEY` (chave Fernet) e `OPERATOR_USERS` contendo **apenas o hash
+PBKDF2** da senha. Nenhum segredo é impresso. O `main.py` carrega o `.env` automaticamente;
+variáveis já definidas no ambiente têm prioridade.
+
+Para mais operadores, gere o hash com `python -m src.cloud.api.middleware.auth "<senha>"` e
+acrescente ao JSON de `OPERATOR_USERS`:
+
+```json
+{"admin": {"role": "admin", "password_hash": "pbkdf2_sha256$600000$..."},
+ "op1":   {"role": "operator", "password_hash": "pbkdf2_sha256$600000$..."}}
+```
+
+Sem `OPERATOR_USERS`, a API sobe, registra um aviso e o login responde **503** com a mensagem
+"Nenhum operador configurado no servidor. Defina OPERATOR_USERS". Não existem usuários padrão.
+
+<details>
+<summary><b>Variáveis de ambiente</b></summary>
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `OPERATOR_USERS` | — | Operadores (JSON com hashes). Obrigatória para login |
+| `JWT_SECRET` | aleatório temporário | Assinatura dos tokens. Valores com menos de 32 caracteres são ignorados |
+| `ENCRYPTION_KEY` | — | Chave Fernet para recortes de rosto criptografados |
+| `DATABASE_URL` | vazio → SQLite `./olho_de_deus.db` | Ex.: `postgresql://olho:<senha>@host:5432/olho_de_deus` (driver psycopg 3) |
+| `USE_SQLITE` | `false` | Força SQLite |
+| `API_HOST` / `API_PORT` | `127.0.0.1` / `8000` | Endereço da API (prioridade sobre o config) |
+| `CORS_ORIGINS` | `http://localhost:3000` | Origens permitidas, separadas por vírgula |
+| `LOGIN_RATE_PER_MINUTE` / `_PER_HOUR` | `10` / `100` | Tentativas de login por IP antes de responder 429 |
+| `EVIDENCE_DIR` | `./forensic_logs` | Onde a API guarda frames de evidência |
+| `EVIDENCE_MAX_MB` | `10` | Tamanho máximo de upload de evidência |
+| `TSA_ENABLED` / `TSA_URL` | `false` / FreeTSA | Carimbo de tempo RFC 3161 (exige rede) |
+| `WEBHOOK_URL` | — | Recebe um POST JSON quando um alerta é escalado ou é crítico |
+</details>
+
+### 2. Câmeras e analíticos (`config.yaml`)
+
+```bash
 cp config.yaml.example config.yaml
 ```
 
-### Executar
+```yaml
+cameras:
+  - id: "CAM-001"
+    url: "${CAM_001_URL:rtsp://192.168.1.100:554/stream1}"   # ${VAR:padrão} é expandido
+
+analytics:                      # coordenadas normalizadas 0–1 do frame
+  zone_intrusion:
+    zone: [[0.0, 0.0], [0.5, 0.0], [0.5, 1.0], [0.0, 1.0]]
+    active_hours: [["19:00", "07:00"]]     # só fora do expediente
+  people_counter:
+    line: [[0.5, 0.0], [0.5, 1.0]]         # entrada = esquerda → direita na imagem
+    detector: hog                          # ou motion
+    max_occupancy: 20
+  abandoned_object:
+    min_static_seconds: 60
+```
+
+## Uso
+
+<p align="center">
+  <img src="docs/assets/fluxo-uso.svg" alt="Fluxo de uso em 5 passos" width="900">
+</p>
 
 ```bash
-python main.py --config config.yaml --mode api     # API HITL (FastAPI) em :8000, docs em /docs
-python main.py --config config.yaml --mode edge    # processamento de câmeras (requer câmera/RTSP)
+python main.py -c config.yaml -m api                       # API HITL (docs em /docs)
+python main.py -c config.yaml -m edge                      # todas as câmeras do config
+python main.py -c config.yaml -m edge -s gravacao.mp4      # um arquivo ou webcam ("0")
+python main.py -c config.yaml -m all                       # API em segundo plano + edge
+python -m src.cloud.init_db                                # cria as tabelas
 ```
 
-Sem PostgreSQL, use `USE_SQLITE=true` (cria `olho_de_deus.db` local).
+No modo edge, cada câmera roda numa thread. Ao terminar, o comando imprime um resumo JSON
+(`frames_processed`, `events_by_type`...). Códigos de saída: `0` ok, `1` fonte indisponível,
+`2` nenhuma câmera configurada.
 
----
+<details>
+<summary><b>Endpoints da API</b> (todos exigem <code>Authorization: Bearer &lt;token&gt;</code>, exceto login, <code>/</code> e <code>/health</code>)</summary>
 
-## ⚙️ Configuração
-
-### Variáveis de ambiente principais (`.env.example`)
-
-| Variável | Uso |
-|----------|-----|
-| `OPERATOR_USERS` | **Obrigatória para login.** JSON `{"usuario": {"role": "operator", "password_hash": "pbkdf2_sha256$..."}}`. Gere o hash com `python -m src.cloud.api.middleware.auth "<senha>"`. Não há mais usuários/senhas padrão no código. |
-| `JWT_SECRET` | Segredo do JWT. Se ausente, é gerado um temporário (tokens invalidam ao reiniciar). |
-| `DATABASE_URL` / `USE_SQLITE` | PostgreSQL ou SQLite local |
-| `ENCRYPTION_KEY` | Chave Fernet para dados sensíveis |
-| `CORS_ORIGINS`, `API_HOST`, `API_PORT`, `LOG_LEVEL` | API |
-
-Demais parâmetros (câmeras, thresholds, TSA) ficam em `config.yaml`.
-
----
-
-## 🧪 Testes
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | `/api/v1/auth/token` | Login (form `username`, `password`) → JWT. 401 se inválido, 429 em excesso, 503 sem operadores |
+| POST | `/api/v1/alerts/` | Cria alerta: score ≥ 0,95 é escalado e notificado; ≥ 0,70 fica pendente para HITL |
+| GET | `/api/v1/alerts/` · `/api/v1/alerts/{id}` | Lista / consulta |
+| POST | `/api/v1/alerts/{id}/review` | Revisão (`dismiss` / `escalate`) |
+| POST | `/api/v1/hitl/review` | Decisão HITL. O operador vem do token, não do corpo |
+| GET | `/api/v1/hitl/decisions/{alert_id}` · `/operators/{id}/stats` · `/dashboard/summary` | Auditoria e painel |
+| POST | `/api/v1/evidence/upload` | Envia frame (máx. `EVIDENCE_MAX_MB`) e calcula SHA-256 |
+| POST | `/api/v1/evidence/{id}/verify` | Recalcula o hash e detecta adulteração |
+| WS | `/api/v1/alerts/ws/live?token=` · `/api/v1/hitl/ws/queue?token=` | Tempo real. Sem token válido, fecha com código 1008 |
 
 ```bash
-USE_SQLITE=true python -m pytest -q -o addopts=""
-ruff check --select E9,F63,F7,F82 src tests main.py
+TOKEN=$(curl -s -X POST localhost:8000/api/v1/auth/token -d "username=admin" --data-urlencode "password=$SENHA" | jq -r .access_token)
+curl -H "Authorization: Bearer $TOKEN" localhost:8000/api/v1/alerts/
 ```
+</details>
 
-Os testes usam dados sintéticos; não exigem câmera, GPU nem modelos ONNX.
-O CI (`.github/workflows/ci.yml`) roda lint, compilação/import da API e testes.
+## Exemplos de casos reais
 
----
+Cada exemplo é executável e tem README próprio (problema, como rodar, saída esperada). Sem
+`--video`, ele gera uma cena sintética; com `--video`, usa a sua gravação. Os quatro rodam no CI.
 
-## 🛠️ Troubleshooting
-
-### ❌ "Modelo facial não carregado"
+| Exemplo | Caso | Resultado na cena de amostra |
+|---|---|---|
+| [01 — Intrusão fora do horário](examples/01_intrusao_fora_do_horario/) | movimento no pátio entre 19h e 7h | 22:30 → 1 alerta · 10:00 → nenhum |
+| [02 — Contagem e lotação](examples/02_contagem_de_pessoas/) | entradas/saídas por uma porta | 3 entradas, 1 saída, alerta ao passar de 2 |
+| [03 — Objeto abandonado](examples/03_objeto_abandonado/) | mala deixada no saguão | 1 alerta, caixa sobre a mala |
+| [04 — Fluxo HITL completo](examples/04_fluxo_hitl_completo/) | evento → alerta → login → revisão → evidência verificada | escalado, evidência íntegra, Merkle válido |
 
 ```bash
-# Verifique se OpenCV está instalado
-python -c "import cv2; print(cv2.__version__)"
-
-# Se necessário, reinstale
-pip uninstall opencv-python
-pip install opencv-python
+python examples/01_intrusao_fora_do_horario/run.py
+python examples/02_contagem_de_pessoas/run.py --video gravacao.mp4 --detector hog --hog-resize 1.5
 ```
 
-### ❌ "Nenhuma fonte de vídeo configurada"
+<details>
+<summary><b>O que foi validado com dados reais (e o que não foi)</b></summary>
 
-Edite `config.json` e adicione fontes em `video_sources`:
+- **Detector HOG de pessoas** (OpenCV, CPU) no vídeo público `vtest.avi` (768×576): ~6 pessoas/frame
+  com `hog_resize=1.5`. Num frame conferido visualmente: 6 acertos, 1 falso positivo (uma van),
+  2 pessoas perdidas (uma distante, outra encoberta). Custo: 0,13–0,34 s/frame.
+- **Borramento de rosto** (Haar) na foto pública `messi5.jpg`: o rosto principal foi borrado;
+  rostos minúsculos da torcida (< 30 px) não foram.
+- **API + PostgreSQL em Docker**: login, alerta persistido, healthcheck.
+- **Não validado:** câmera física, RTSP real, modelos ONNX (YOLOv8-Face/FaceNet; o código aceita,
+  mas nenhum peso foi testado) e acurácia de contagem contra uma referência manual.
+</details>
 
-```json
-{
-  "video_sources": ["0"]
-}
-```
+## Privacidade e LGPD
 
-### ❌ Erros de permissão
+Imagens de pessoas são dados pessoais. Usar o sistema exige base legal (em geral, legítimo
+interesse ou segurança, art. 7º da LGPD), transparência e minimização. O software ajuda nisso,
+mas **não substitui** a análise jurídica e o relatório de impacto (RIPD) do controlador.
+
+- **Aviso de monitoramento:** sinalize as áreas filmadas com placas visíveis antes da entrada,
+  indicando o controlador, a finalidade (segurança patrimonial) e um contato do encarregado (DPO).
+- **Minimização:** rostos são borrados nos snapshots e nas evidências gerados pelo pipeline.
+  Não há reconhecimento facial nem embeddings gravados. Os eventos guardam tipo, horário,
+  câmera e caixas delimitadoras.
+- **Acesso restrito:** todas as rotas de dados exigem login. Senhas ficam só como hash PBKDF2,
+  há limite de tentativas, e cada decisão HITL é registrada com o operador do token. Hoje todos
+  os operadores autenticados têm o mesmo acesso: os papéis (`role`) ficam registrados, mas
+  ainda não restringem rotas.
+- **Revisão humana:** alertas abaixo de 0,95 dependem de decisão de um operador antes de
+  qualquer notificação externa.
+- **Retenção:** defina um prazo (ex.: 30 dias para gravações sem incidente) e aplique-o ao
+  diretório de evidências e ao banco. O projeto **não apaga dados automaticamente**: a
+  eliminação precisa equilibrar a LGPD com a cadeia de custódia de incidentes e é decisão do
+  controlador. `LegalBasisRegistry` (`src/privacy/legal_basis.py`) registra finalidade, base
+  legal e prazo de cada tratamento.
+- **Direitos dos titulares:** mantenha um canal para pedidos de acesso e eliminação. Os logs
+  forenses permitem localizar eventos por câmera e horário.
+
+## Limitações reais
+
+- Analíticos clássicos (MOG2/HOG) erram com chuva, sombras fortes, mudanças bruscas de luz e
+  multidões. Pessoas muito próximas viram um único blob no detector `motion`.
+- O detector de objeto abandonado também dispara para uma pessoa parada pelo mesmo tempo.
+- A detecção de rosto por Haar perde rostos pequenos, de perfil ou parcialmente cobertos. O
+  borramento é um esforço de minimização, não uma garantia.
+- `verify_timestamp` confere o hash e a presença do certificado da TSA, mas **não valida a
+  assinatura** criptográfica da resposta RFC 3161.
+- Envio por **e-mail e SMS não está implementado** (retorna `success: false`); o webhook está.
+- O dashboard web (frontend) não existe neste repositório; a API tem documentação interativa em `/docs`.
+- Papéis de operador ainda não restringem rotas.
+
+## Desenvolvimento e qualidade
 
 ```bash
-# Crie as pastas manualmente
-mkdir incidents logs models
-
-# Ou use o script
-python src/security_system.py  # Cria automaticamente
+pip install -r requirements-ci.txt
+USE_SQLITE=true python -m pytest -q --cov=src      # 116 testes, cobertura de 76% (mínimo de 70% no CI)
+ruff check src tests main.py examples && ruff format --check src tests main.py examples
+mypy src/edge src/forensic src/privacy src/tools src/envfile.py src/cloud/api/middleware/auth.py main.py \
+     --ignore-missing-imports --follow-imports=silent
 ```
 
-### ❌ "TensorFlow não encontrado"
+O CI (`.github/workflows/ci.yml`) roda lint, formatação, mypy, os testes (que incluem os 4
+exemplos) e o build da imagem Docker. Não publica nada e não faz deploy. Auditorias:
+[`docs/auditoria/`](docs/auditoria/) e [`docs/auditoria-seguranca-vies.md`](docs/auditoria-seguranca-vies.md).
 
-```bash
-# Instale TensorFlow
-pip install tensorflow
+<details>
+<summary><b>Problemas comuns</b></summary>
 
-# Ou CPU-only (mais leve)
-pip install tensorflow-cpu
-```
+- **`ModuleNotFoundError: yaml`**: instale `requirements.txt` (o PyYAML faz parte dele).
+- **Login responde 503**: defina `OPERATOR_USERS` (veja [Configuração](#configuração)).
+- **Login responde 429**: excesso de tentativas pelo mesmo IP; aguarde ou ajuste `LOGIN_RATE_PER_MINUTE`.
+- **RTSP não conecta**: confira a URL com `ffplay`/VLC. Os wheels do PyPI usam FFmpeg; GStreamer só se o seu OpenCV foi compilado com ele.
+- **Nenhum alerta de intrusão**: a zona só fica ativa no horário de `active_hours`; para arquivos, o horário vem de `--inicio` nos exemplos ou do momento da execução no `main.py`.
+- **HOG não detecta pessoas pequenas**: aumente `hog_resize` (1.5–2.0), ao custo de mais CPU.
+</details>
 
----
+## Licença e contato
 
-## 📊 Benchmarks
-
-> ⚠️ Valores não verificados na auditoria de 2026-11-22 (sem script de benchmark no repositório).
-
-| Hardware | FPS | CPU | RAM | Câmeras |
-|----------|-----|-----|-----|---------|
-| Intel i7-10700K | 30 | 45% | 2.1GB | 4 |
-| Intel i5-9600K | 24 | 62% | 1.8GB | 3 |
-| AMD Ryzen 7 5800X | 32 | 38% | 2.3GB | 4 |
-| Raspberry Pi 4 | 8 | 95% | 1.2GB | 1 |
-
----
-
-## 📝 LICENSE
-
-MIT License - Verifique leis locais antes de usar.
-
-Este software é fornecido "como está" sem garantias de qualquer tipo, expressas ou implícitas.
-
----
-
-## 🤝 Contribuições
-
-Contribuições são bem-vindas! Por favor:
-
-1. Fork o projeto
-2. Crie uma branch (`git checkout -b feature/AmazingFeature`)
-3. Commit (`git commit -m 'Add AmazingFeature'`)
-4. Push (`git push origin feature/AmazingFeature`)
-5. Pull Request
-
-### 📋 Guidelines de Contribuição
-
-- Siga o estilo de código existente (PEP 8)
-- Adicione testes para novas funcionalidades
-- Atualize a documentação conforme necessário
-- Use type hints em funções públicas
-
----
-
-## 📧 Contato
-
-**Desenvolvido por:** Wellington de Lima Catarina
-lelolima806@gmail.com
-
-**Repositório:** [github.com/Lelolima/Eyes-of-God](https://github.com/Lelolima/Eyes-of-God)
-
----
-
-<div align="center">
-
-**O-OLHO-DE-DEUS v3.0.1** • 2026-07-04
-
-*👁️ Edge AI • Privacy by Design • Human-in-the-Loop • Forensic Logging*
-
-</div>
+MIT. Verifique as leis locais antes de qualquer implantação.
+Desenvolvido por Wellington de Lima Catarina — lelolima806@gmail.com.
