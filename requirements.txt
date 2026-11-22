@@ -1,0 +1,13 @@
+# Dependências de execução (versões fixadas e validadas em 2026-11-22, Python 3.11).
+opencv-python-headless==4.11.0.86
+numpy==1.26.4
+cryptography==50.0.2
+PyJWT==2.15.1
+requests==2.34.2
+PyYAML==6.0.4
+aiohttp==3.14.5
+fastapi==0.165.0
+uvicorn==0.54.0
+python-multipart==0.0.34
+SQLAlchemy==2.1.9
+psycopg[binary]==3.3.9  # driver padrão do SQLAlchemy 2.1 para postgresql://
