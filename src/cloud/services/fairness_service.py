@@ -123,7 +123,10 @@ class FairnessService:
         self._last_check = datetime.now()
 
         # Verifica se deve alertar
-        if not report["overall_passed"]:
+        # Não avaliável (1 grupo) não é "viés detectado": só registra aviso
+        if not report.get("evaluable", True):
+            logger.warning("Fairness não avaliável: menos de 2 grupos sensíveis nos dados")
+        elif not report["overall_passed"]:
             self._trigger_bias_alert(report)
 
         return report

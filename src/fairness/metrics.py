@@ -459,18 +459,26 @@ class FairnessMetrics:
             "predictive_rate_parity": self.predictive_rate_parity(y_true, y_pred, sens)
         }
 
-        # Verifica overall
-        overall_passed = all(r.passed for r in results.values())
+        # Distribuição de grupos
+        groups, counts = np.unique(sens, return_counts=True)
+        group_distribution = {str(g): int(c) for g, c in zip(groups, counts)}
+
+        # Com menos de 2 grupos não há comparação possível: antes o relatório
+        # aprovava trivialmente (disparidade 0). Agora não é avaliável e não aprova.
+        evaluable = len(groups) >= 2
+        overall_passed = evaluable and all(r.passed for r in results.values())
 
         # Gera recomendações
         recommendations = self._generate_recommendations(results)
-
-        # Distribuição de grupos
-        groups, counts = np.unique(sens, return_counts=True)
-        group_distribution = dict(zip(groups, counts))
+        if not evaluable:
+            recommendations.insert(
+                0,
+                "Fairness não avaliável: é preciso dados de pelo menos 2 grupos sensíveis.",
+            )
 
         return {
             "overall_passed": overall_passed,
+            "evaluable": evaluable,
             "metrics": {k: v.to_dict() for k, v in results.items()},
             "recommendations": recommendations,
             "sample_size": len(y_pred),

@@ -104,6 +104,9 @@ class TestBiasDetector(unittest.TestCase):
         result = self.detector.check_bias()
         self.assertIsNotNone(result)
         self.assertEqual(result["samples_analyzed"], 5)
+        # Um único grupo: não há comparação possível, logo não aprova
+        self.assertFalse(result["evaluable"])
+        self.assertFalse(result["overall_passed"])
 
 
 if __name__ == "__main__":
