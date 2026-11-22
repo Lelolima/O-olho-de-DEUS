@@ -14,7 +14,7 @@ from src.edge.streamer import RTSPStreamer
 
 
 def write_video(path: Path, frames: int = 12, size=(160, 120), fps: int = 10) -> Path:
-    writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"MJPG"), fps, size)
+    writer = cv2.VideoWriter(str(path), cv2.VideoWriter.fourcc(*"MJPG"), fps, size)
     assert writer.isOpened()
     for i in range(frames):
         frame = np.full((size[1], size[0], 3), 40, dtype=np.uint8)

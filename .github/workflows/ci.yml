@@ -26,8 +26,8 @@ jobs:
           pip install -r requirements-ci.txt
       - name: Lint e formatação
         run: |
-          ruff check src tests main.py
-          ruff format --check src tests main.py
+          ruff check src tests main.py examples
+          ruff format --check src tests main.py examples
       - name: Tipagem (módulos centrais)
         run: >
           mypy src/edge src/forensic src/privacy src/tools src/envfile.py

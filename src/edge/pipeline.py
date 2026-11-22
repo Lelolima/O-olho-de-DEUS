@@ -109,15 +109,20 @@ class VideoPipeline:
         self.face_event_min_faces = face_event_min_faces
         self.on_event = on_event
         self.last_masked_frame: np.ndarray | None = None
+        # Frame do processamento atual, já com rostos borrados quando há processor
+        # (usado por callbacks para salvar evidência visual sem expor rostos).
+        self.current_frame: np.ndarray | None = None
 
     def process_frame(self, frame: np.ndarray, timestamp: datetime, frame_index: int) -> tuple[list[Event], int]:
         """Processa um frame; retorna (eventos, número de rostos)."""
         events: list[Event] = []
         faces_count = 0
+        self.current_frame = frame
 
         if self.processor is not None:
             faces, masked = self.processor.process_frame(frame, extract_embedding=False)
             self.last_masked_frame = masked
+            self.current_frame = masked
             faces_count = len(faces)
             if self.face_event_min_faces and faces_count >= self.face_event_min_faces:
                 events.append(
