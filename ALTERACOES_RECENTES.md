@@ -226,7 +226,7 @@ curl -X POST http://localhost:8000/api/v1/alerts/ \
 
 # Com token (deve funcionar)
 TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/token \
-  -d "username=admin" -d "password=admin123" | jq -r .access_token)
+  -d "username=admin" -d "password=<SUA_SENHA>" | jq -r .access_token)
 
 curl -X POST http://localhost:8000/api/v1/alerts/ \
   -H "Authorization: Bearer $TOKEN" \
