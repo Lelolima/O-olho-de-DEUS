@@ -1,10 +1,10 @@
 """HITL Decision Model - Modelo SQLAlchemy para decisões de operadores."""
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Index, Float
-from sqlalchemy.orm import declarative_base, relationship
-
-Base = declarative_base()
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Index, Float, Integer
+# Mesmo Base de incident.py: a FK hitl_decisions.alert_id -> incidents.id exige
+# os modelos no mesmo MetaData (antes cada arquivo criava o seu Base).
+from .incident import Base
 
 
 class HitlDecision(Base):
