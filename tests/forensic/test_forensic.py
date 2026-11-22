@@ -132,6 +132,21 @@ class TestForensicLogger(unittest.TestCase):
         )
 
         self.assertTrue(result["evidence_found"])
+        # Antes a verificação lançava ValueError (MerkleTree([])); agora valida de fato
+        self.assertTrue(result["valid"])
+
+    def test_evidence_chain_rejects_tampered_root(self):
+        """Batch com raiz Merkle adulterada não pode ser considerado válido."""
+        self.logger.log_evidence({
+            "id": "evt_tamper",
+            "timestamp": "2026-07-03T14:00:00Z",
+            "camera_id": "CAM-001",
+            "alarm_score": 0.95,
+        })
+        batch = dict(self.logger.flush_batch())
+        batch["merkle_root"] = "00" * 32
+        result = self.logger.verify_evidence_chain("evt_tamper", batch)
+        self.assertFalse(result["valid"])
 
 
 class TestTimestampAuthority(unittest.TestCase):

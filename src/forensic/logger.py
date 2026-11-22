@@ -243,9 +243,14 @@ class ForensicLogger:
         from .merkle_tree import MerkleProof
         proof = MerkleProof.from_dict(proof_data)
 
-        from .merkle_tree import MerkleTree as MT
-        # Cria árvore dummy para verificação
-        is_valid = MT([]).verify_proof(proof)  # type: ignore
+        from .merkle_tree import verify_merkle_proof
+        # Antes: MT([]) lançava "MerkleTree requer pelo menos uma folha" e a
+        # verificação nunca funcionava. Agora também confere a raiz do batch
+        # (uma prova autoconsistente, mas de outra árvore, não é aceita).
+        is_valid = (
+            verify_merkle_proof(proof)
+            and proof.root_hash == batch_record.get("merkle_root")
+        )
 
         if not is_valid:
             result["merkle_proof_valid"] = False
