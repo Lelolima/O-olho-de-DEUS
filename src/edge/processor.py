@@ -13,25 +13,27 @@ Arquitetura:
 """
 
 import logging
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
 
 import cv2
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# cv2.data não consta nos stubs de tipos do OpenCV
+HAAR_FACE_CASCADE = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"  # type: ignore[attr-defined]
+
 
 @dataclass
 class FaceDetection:
     """Detecção facial com embedding."""
 
-    bounding_box: Tuple[int, int, int, int]  # (x, y, w, h)
+    bounding_box: tuple[int, int, int, int]  # (x, y, w, h)
     confidence: float
-    embedding: Optional[np.ndarray] = None  # 512-dim vector
+    embedding: np.ndarray | None = None  # 512-dim vector
     embedding_model: str = "unknown"
     masked: bool = True
-    landmark: Optional[List[Tuple[int, int]]] = None  # 5 pontos faciais
+    landmark: list[tuple[int, int]] | None = None  # 5 pontos faciais
 
     def to_dict(self) -> dict:
         """Serializa para dict JSON-serializable."""
@@ -40,14 +42,14 @@ class FaceDetection:
                 "x": self.bounding_box[0],
                 "y": self.bounding_box[1],
                 "w": self.bounding_box[2],
-                "h": self.bounding_box[3]
+                "h": self.bounding_box[3],
             },
             "confidence": self.confidence,
             "embedding": self.embedding.tolist() if self.embedding is not None else None,
             "embedding_dim": self.embedding.shape[0] if self.embedding is not None else 0,
             "embedding_model": self.embedding_model,
             "masked": self.masked,
-            "landmarks": self.landmark
+            "landmarks": self.landmark,
         }
 
 
@@ -79,12 +81,12 @@ class EdgeAIProcessor:
 
     def __init__(
         self,
-        face_model_path: Optional[str] = None,
-        embedding_model_path: Optional[str] = None,
+        face_model_path: str | None = None,
+        embedding_model_path: str | None = None,
         backend: str = ONNX,
         device: str = "GPU",
         confidence_threshold: float = 0.5,
-        iou_threshold: float = 0.45
+        iou_threshold: float = 0.45,
     ):
         """
         Inicializa Edge AI Processor.
@@ -107,7 +109,7 @@ class EdgeAIProcessor:
         # Modelos carregados
         self.face_model = None
         self.embedding_model = None
-        self.face_classifier = None  # Haar Cascade fallback
+        self.face_classifier: cv2.CascadeClassifier | None = None  # Haar Cascade fallback
 
         # Session de inferência
         self.face_session = None
@@ -123,9 +125,7 @@ class EdgeAIProcessor:
         # Carrega detector facial
         if self.backend == self.HAAR or not self.face_model_path:
             # Fallback: Haar Cascade
-            self.face_classifier = cv2.CascadeClassifier(
-                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-            )
+            self.face_classifier = cv2.CascadeClassifier(HAAR_FACE_CASCADE)
             logger.info("Haar Cascade carregado como fallback")
         else:
             # Carrega modelo ONNX/TensorRT/OpenVINO
@@ -143,15 +143,14 @@ class EdgeAIProcessor:
 
                 providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
                 self.face_session = ort.InferenceSession(
-                    self.face_model_path,
-                    providers=providers if self.device == "GPU" else ["CPUExecutionProvider"]
+                    self.face_model_path, providers=providers if self.device == "GPU" else ["CPUExecutionProvider"]
                 )
                 logger.info(f"Modelo facial ONNX carregado: {self.face_model_path}")
 
             elif self.backend == self.TENSORRT:
                 # TensorRT requer instalação específica
                 try:
-                    from tensorrt import Runtime, Logger
+                    from tensorrt import Logger, Runtime
 
                     logger_trt = Logger()
                     with open(self.face_model_path, "rb") as f:
@@ -159,7 +158,7 @@ class EdgeAIProcessor:
 
                     runtime = Runtime(logger_trt)
                     self.face_model = runtime.deserialize_cuda_engine(engine_data)
-                    logger.info(f"Modelo facial TensorRT carregado")
+                    logger.info("Modelo facial TensorRT carregado")
 
                 except ImportError:
                     logger.warning("TensorRT não disponível, fallback para ONNX")
@@ -173,20 +172,18 @@ class EdgeAIProcessor:
                     core = Core()
                     self.face_model = core.read_model(self.face_model_path)
                     self.face_session = core.compile_model(self.face_model, self.device)
-                    logger.info(f"Modelo facial OpenVINO carregado")
+                    logger.info("Modelo facial OpenVINO carregado")
 
                 except ImportError:
                     logger.warning("OpenVINO não disponível, fallback para ONNX")
                     self.backend = self.ONNX
                     self._load_face_model()
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - qualquer falha de backend (onnx/trt/openvino) cai para Haar
             logger.error(f"Erro ao carregar modelo facial: {e}")
             # Fallback para Haar
             self.backend = self.HAAR
-            self.face_classifier = cv2.CascadeClassifier(
-                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-            )
+            self.face_classifier = cv2.CascadeClassifier(HAAR_FACE_CASCADE)
 
     def _load_embedding_model(self):
         """Carrega modelo de extração de embeddings."""
@@ -196,15 +193,14 @@ class EdgeAIProcessor:
 
                 providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
                 self.embedding_session = ort.InferenceSession(
-                    self.embedding_model_path,
-                    providers=providers if self.device == "GPU" else ["CPUExecutionProvider"]
+                    self.embedding_model_path, providers=providers if self.device == "GPU" else ["CPUExecutionProvider"]
                 )
-                logger.info(f"Modelo de embedding ONNX carregado")
+                logger.info("Modelo de embedding ONNX carregado")
 
             elif self.backend == self.TENSORRT:
                 # Similar ao face model, mas para embedding
                 try:
-                    from tensorrt import Runtime, Logger
+                    from tensorrt import Logger, Runtime
 
                     logger_trt = Logger()
                     with open(self.embedding_model_path, "rb") as f:
@@ -217,15 +213,13 @@ class EdgeAIProcessor:
                     logger.warning("TensorRT não disponível para embedding")
                     self.embedding_session = None
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - embedding é opcional; falha desliga a etapa
             logger.warning(f"Erro ao carregar modelo de embedding: {e}")
             self.embedding_session = None
 
     def process_frame(
-        self,
-        frame: np.ndarray,
-        extract_embedding: bool = True
-    ) -> Tuple[List[FaceDetection], np.ndarray]:
+        self, frame: np.ndarray, extract_embedding: bool = True
+    ) -> tuple[list[FaceDetection], np.ndarray]:
         """
         Processa frame na borda.
 
@@ -251,7 +245,7 @@ class EdgeAIProcessor:
 
         return faces, masked_frame
 
-    def _detect_faces(self, frame: np.ndarray) -> List[FaceDetection]:
+    def _detect_faces(self, frame: np.ndarray) -> list[FaceDetection]:
         """Detecta faces no frame."""
         if self.backend == self.HAAR or self.face_classifier is not None:
             return self._detect_faces_haar(frame)
@@ -264,28 +258,27 @@ class EdgeAIProcessor:
         else:
             return []
 
-    def _detect_faces_haar(self, frame: np.ndarray) -> List[FaceDetection]:
+    def _detect_faces_haar(self, frame: np.ndarray) -> list[FaceDetection]:
         """Detecção usando Haar Cascade (fallback)."""
+        if self.face_classifier is None:
+            self.face_classifier = cv2.CascadeClassifier(HAAR_FACE_CASCADE)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        faces_rects = self.face_classifier.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30)
-        )
+        faces_rects = self.face_classifier.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
         faces = []
-        for (x, y, w, h) in faces_rects:
-            faces.append(FaceDetection(
-                bounding_box=(x, y, w, h),
-                confidence=0.7,  # Haar não dá confiança precisa
-                embedding_model="none"
-            ))
+        for x, y, w, h in faces_rects:
+            faces.append(
+                FaceDetection(
+                    bounding_box=(x, y, w, h),
+                    confidence=0.7,  # Haar não dá confiança precisa
+                    embedding_model="none",
+                )
+            )
 
         return faces
 
-    def _detect_faces_onnx(self, frame: np.ndarray) -> List[FaceDetection]:
+    def _detect_faces_onnx(self, frame: np.ndarray) -> list[FaceDetection]:
         """Detecção usando modelo ONNX (YOLOv8-Face)."""
         if not self.face_session:
             return self._detect_faces_haar(frame)
@@ -301,7 +294,7 @@ class EdgeAIProcessor:
 
         return faces
 
-    def _detect_faces_tensorrt(self, frame: np.ndarray) -> List[FaceDetection]:
+    def _detect_faces_tensorrt(self, frame: np.ndarray) -> list[FaceDetection]:
         """Detecção usando TensorRT."""
         if not self.face_model:
             return self._detect_faces_haar(frame)
@@ -311,7 +304,7 @@ class EdgeAIProcessor:
         logger.warning("Inferência TensorRT não implementada completa")
         return self._detect_faces_haar(frame)
 
-    def _detect_faces_openvino(self, frame: np.ndarray) -> List[FaceDetection]:
+    def _detect_faces_openvino(self, frame: np.ndarray) -> list[FaceDetection]:
         """Detecção usando OpenVINO."""
         if not self.face_session:
             return self._detect_faces_haar(frame)
@@ -342,11 +335,7 @@ class EdgeAIProcessor:
         # Adiciona batch dimension
         return np.expand_dims(normalized, axis=0)
 
-    def _postprocess_detection(
-        self,
-        outputs: list,
-        frame_shape: tuple
-    ) -> List[FaceDetection]:
+    def _postprocess_detection(self, outputs: list, frame_shape: tuple) -> list[FaceDetection]:
         """Processa outputs da detecção."""
         faces = []
 
@@ -377,19 +366,13 @@ class EdgeAIProcessor:
                     w = int(w * frame_shape[1])
                     h = int(h * frame_shape[0])
 
-                    faces.append(FaceDetection(
-                        bounding_box=(x, y, w, h),
-                        confidence=confidence,
-                        embedding_model="pending"
-                    ))
+                    faces.append(
+                        FaceDetection(bounding_box=(x, y, w, h), confidence=confidence, embedding_model="pending")
+                    )
 
         return faces
 
-    def _extract_embedding(
-        self,
-        frame: np.ndarray,
-        bbox: Tuple[int, int, int, int]
-    ) -> np.ndarray:
+    def _extract_embedding(self, frame: np.ndarray, bbox: tuple[int, int, int, int]) -> np.ndarray:
         """Extrai embedding facial (512-dim)."""
         if not self.embedding_session:
             return np.zeros(512)
@@ -397,7 +380,7 @@ class EdgeAIProcessor:
         x, y, w, h = bbox
 
         # Extrai ROI
-        roi = frame[y:y+h, x:x+w]
+        roi = frame[y : y + h, x : x + w]
         if roi.size == 0:
             return np.zeros(512)
 
@@ -414,10 +397,7 @@ class EdgeAIProcessor:
         input_tensor = np.expand_dims(roi_normalized, axis=0)
 
         # Inferência
-        output = self.embedding_session.run(
-            None,
-            {self.embedding_session.get_inputs()[0].name: input_tensor}
-        )
+        output = self.embedding_session.run(None, {self.embedding_session.get_inputs()[0].name: input_tensor})
 
         # Retorna embedding normalizado
         embedding = output[0].flatten()
@@ -427,24 +407,15 @@ class EdgeAIProcessor:
 
         return embedding
 
-    def _apply_masking(
-        self,
-        frame: np.ndarray,
-        faces: List[FaceDetection]
-    ) -> np.ndarray:
+    def _apply_masking(self, frame: np.ndarray, faces: list[FaceDetection]) -> np.ndarray:
         """Aplica blur em todos os rostos detectados."""
-        from src.privacy.masker import DynamicMasker, BoundingBox
+        from src.privacy.masker import BoundingBox, DynamicMasker
 
         masker = DynamicMasker(method="gaussian", blur_strength=99)
 
         # Converte para BoundingBox
         boxes = [
-            BoundingBox(
-                x=f.bounding_box[0],
-                y=f.bounding_box[1],
-                width=f.bounding_box[2],
-                height=f.bounding_box[3]
-            )
+            BoundingBox(x=f.bounding_box[0], y=f.bounding_box[1], width=f.bounding_box[2], height=f.bounding_box[3])
             for f in faces
         ]
 
@@ -458,7 +429,7 @@ class EdgeAIProcessor:
             "face_model_loaded": self.face_session is not None or self.face_classifier is not None,
             "embedding_model_loaded": self.embedding_session is not None,
             "confidence_threshold": self.confidence_threshold,
-            "iou_threshold": self.iou_threshold
+            "iou_threshold": self.iou_threshold,
         }
 
 
@@ -486,5 +457,5 @@ def create_processor_from_config(config: dict) -> EdgeAIProcessor:
         backend=config.get("backend", "onnx"),
         device=config.get("device", "GPU"),
         confidence_threshold=config.get("thresholds", {}).get("confidence", 0.5),
-        iou_threshold=config.get("thresholds", {}).get("iou", 0.45)
+        iou_threshold=config.get("thresholds", {}).get("iou", 0.45),
     )

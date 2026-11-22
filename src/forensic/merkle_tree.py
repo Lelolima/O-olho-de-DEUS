@@ -12,7 +12,7 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Optional
 
 
 @dataclass
@@ -20,10 +20,10 @@ class MerkleNode:
     """Nó da árvore Merkle."""
 
     hash: str
-    left: Optional['MerkleNode'] = None
-    right: Optional['MerkleNode'] = None
-    data: Optional[dict] = None  # Apenas em folhas (leaf nodes)
-    index: Optional[int] = None  # Índice da folha (apenas para leaves)
+    left: Optional["MerkleNode"] = None
+    right: Optional["MerkleNode"] = None
+    data: dict | None = None  # Apenas em folhas (leaf nodes)
+    index: int | None = None  # Índice da folha (apenas para leaves)
 
 
 @dataclass
@@ -37,7 +37,7 @@ class MerkleProof:
 
     leaf_hash: str  # Hash da folha sendo provada
     root_hash: str  # Hash da raiz da árvore
-    proof_path: List[Tuple[str, str]] = field(default_factory=list)
+    proof_path: list[tuple[str, str]] = field(default_factory=list)
     # Cada tupla: (hash_do_sibling, posicao) onde posicao é 'left' ou 'right'
     timestamp: datetime = field(default_factory=datetime.now)
     leaf_index: int = 0  # Índice da folha na árvore original
@@ -49,18 +49,18 @@ class MerkleProof:
             "root_hash": self.root_hash,
             "proof_path": self.proof_path,
             "timestamp": self.timestamp.isoformat(),
-            "leaf_index": self.leaf_index
+            "leaf_index": self.leaf_index,
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'MerkleProof':
+    def from_dict(cls, data: dict) -> "MerkleProof":
         """Deserializa prova de dict."""
         return cls(
             leaf_hash=data["leaf_hash"],
             root_hash=data["root_hash"],
             proof_path=[tuple(p) for p in data["proof_path"]],
             timestamp=datetime.fromisoformat(data["timestamp"]),
-            leaf_index=data.get("leaf_index", 0)
+            leaf_index=data.get("leaf_index", 0),
         )
 
 
@@ -77,10 +77,10 @@ class MerkleTree:
     """
 
     # Prefixos para diferenciar folhas de nós internos (previne ataques de segunda pre-imagem)
-    LEAF_PREFIX = b'\x00'
-    NODE_PREFIX = b'\x01'
+    LEAF_PREFIX = b"\x00"
+    NODE_PREFIX = b"\x01"
 
-    def __init__(self, leaves: List[dict]):
+    def __init__(self, leaves: list[dict]):
         """
         Constrói árvore Merkle a partir de uma lista de evidências.
 
@@ -92,9 +92,9 @@ class MerkleTree:
             raise ValueError("MerkleTree requer pelo menos uma folha")
 
         self.original_leaves = leaves
-        self.leaf_hashes: List[str] = []
-        self.leaf_nodes: List[MerkleNode] = []
-        self.root: Optional[MerkleNode] = None
+        self.leaf_hashes: list[str] = []
+        self.leaf_nodes: list[MerkleNode] = []
+        self.root: MerkleNode | None = None
 
         # Constrói a árvore
         self._build()
@@ -106,8 +106,8 @@ class MerkleTree:
         Usa prefixo 0x00 para distinguir folhas de nós internos.
         """
         # Canonicaliza JSON (sorted keys para consistência)
-        canonical = json.dumps(data, sort_keys=True, separators=(',', ':'))
-        payload = self.LEAF_PREFIX + canonical.encode('utf-8')
+        canonical = json.dumps(data, sort_keys=True, separators=(",", ":"))
+        payload = self.LEAF_PREFIX + canonical.encode("utf-8")
         return hashlib.sha256(payload).hexdigest()
 
     def _hash_nodes(self, left_hash: str, right_hash: str) -> str:
@@ -133,7 +133,7 @@ class MerkleTree:
         # Step 2: Constrói árvore bottom-up
         self.root = self._build_level(self.leaf_nodes)
 
-    def _build_level(self, nodes: List[MerkleNode]) -> MerkleNode:
+    def _build_level(self, nodes: list[MerkleNode]) -> MerkleNode:
         """
         Constrói um nível da árvore.
 
@@ -168,7 +168,7 @@ class MerkleTree:
             MerkleProof com caminho de prova
         """
         if leaf_index < 0 or leaf_index >= len(self.leaf_nodes):
-            raise ValueError(f"Índice {leaf_index} fora de range [0, {len(self.leaf_nodes)-1}]")
+            raise ValueError(f"Índice {leaf_index} fora de range [0, {len(self.leaf_nodes) - 1}]")
 
         proof_path = []
         current_index = leaf_index
@@ -180,18 +180,15 @@ class MerkleTree:
             if current_index % 2 == 0:
                 # Nó esquerdo: sibling é à direita
                 sibling_index = current_index + 1
-                position = 'right'
+                position = "right"
             else:
                 # Nó direito: sibling é à esquerda
                 sibling_index = current_index - 1
-                position = 'left'
+                position = "left"
 
             # Pega sibling (ou duplica se não existir)
-            if sibling_index < len(nodes):
-                sibling_hash = nodes[sibling_index].hash
-            else:
-                # Ímpar: último nó não tem sibling
-                sibling_hash = nodes[current_index].hash
+            # Ímpar: último nó não tem sibling e é duplicado
+            sibling_hash = nodes[sibling_index].hash if sibling_index < len(nodes) else nodes[current_index].hash
 
             proof_path.append((sibling_hash, position))
 
@@ -200,11 +197,7 @@ class MerkleTree:
             for i in range(0, len(nodes), 2):
                 left = nodes[i]
                 right = nodes[i + 1] if i + 1 < len(nodes) else left
-                next_level.append(MerkleNode(
-                    hash=self._hash_nodes(left.hash, right.hash),
-                    left=left,
-                    right=right
-                ))
+                next_level.append(MerkleNode(hash=self._hash_nodes(left.hash, right.hash), left=left, right=right))
 
             nodes = next_level
             current_index = current_index // 2
@@ -214,7 +207,7 @@ class MerkleTree:
             root_hash=self.root.hash if self.root else "",
             proof_path=proof_path,
             timestamp=datetime.now(),
-            leaf_index=leaf_index
+            leaf_index=leaf_index,
         )
 
     def verify_proof(self, proof: MerkleProof) -> bool:
@@ -229,8 +222,7 @@ class MerkleTree:
         """
         return verify_merkle_proof(proof, self.NODE_PREFIX)
 
-
-    def get_leaf_data(self, leaf_index: int) -> Optional[dict]:
+    def get_leaf_data(self, leaf_index: int) -> dict | None:
         """Retorna dados originais de uma folha pelo índice."""
         if 0 <= leaf_index < len(self.original_leaves):
             return self.original_leaves[leaf_index]
@@ -252,11 +244,11 @@ class MerkleTree:
             "root_hash": self.root_hash,
             "leaf_count": self.leaf_count,
             "leaf_hashes": self.leaf_hashes,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
 
-def verify_merkle_proof(proof: "MerkleProof", node_prefix: Optional[bytes] = None) -> bool:
+def verify_merkle_proof(proof: "MerkleProof", node_prefix: bytes | None = None) -> bool:
     """Verifica uma prova de inclusão sem precisar da árvore.
 
     Retorna False (em vez de lançar ValueError) para hashes malformados/adulterados.
@@ -270,7 +262,7 @@ def verify_merkle_proof(proof: "MerkleProof", node_prefix: Optional[bytes] = Non
         return False
 
     for sibling, position in path:
-        if position == 'left':
+        if position == "left":
             current_hash = hashlib.sha256(node_prefix + sibling + current_hash).digest()
         else:
             current_hash = hashlib.sha256(node_prefix + current_hash + sibling).digest()

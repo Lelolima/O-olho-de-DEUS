@@ -90,14 +90,19 @@ class TestEdgeModeCli:
     def test_edge_mode_processes_video_file(self, tmp_path, capsys):
         video = write_video(tmp_path / "v.avi", frames=12)
         cfg = tmp_path / "cfg.json"
-        cfg.write_text(json.dumps({
-            "edge": {"backend": "haar"},
-            "forensic": {"log_dir": str(tmp_path / "logs"), "tsa_enabled": False, "batch_size": 10},
-        }), encoding="utf-8")
+        cfg.write_text(
+            json.dumps(
+                {
+                    "edge": {"backend": "haar"},
+                    "forensic": {"log_dir": str(tmp_path / "logs"), "tsa_enabled": False, "batch_size": 10},
+                }
+            ),
+            encoding="utf-8",
+        )
         code = cli.main(["--mode", "edge", "--config", str(cfg), "--source", str(video)])
         assert code == 0
         out = capsys.readouterr().out
-        summary = json.loads(out[out.index("{"):])
+        summary = json.loads(out[out.index("{") :])
         assert summary["CLI"]["frames_processed"] == 12
 
     def test_edge_mode_bad_source_fails_cleanly(self, tmp_path):

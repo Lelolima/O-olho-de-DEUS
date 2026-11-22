@@ -1,8 +1,7 @@
 """Alert Service - Serviço de gerenciamento de alertas."""
 
-from datetime import datetime
-from typing import Optional, List
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -34,22 +33,18 @@ class AlertService:
         high_threshold: float = 0.85,
         critical_threshold: float = 0.95,
         hysteresis_up: float = 0.05,
-        hysteresis_down: float = 0.10
+        hysteresis_down: float = 0.10,
     ):
         self.thresholds = {
             AlertLevel.LOW: low_threshold,
             AlertLevel.MEDIUM: medium_threshold,
             AlertLevel.HIGH: high_threshold,
-            AlertLevel.CRITICAL: critical_threshold
+            AlertLevel.CRITICAL: critical_threshold,
         }
         self.hysteresis_up = hysteresis_up
         self.hysteresis_down = hysteresis_down
 
-    def classify(
-        self,
-        alarm_score: float,
-        previous_level: Optional[str] = None
-    ) -> str:
+    def classify(self, alarm_score: float, previous_level: str | None = None) -> str:
         """
         Classifica alerta baseado no score.
 
@@ -70,6 +65,14 @@ class AlertService:
                 for level in [AlertLevel.CRITICAL, AlertLevel.HIGH, AlertLevel.MEDIUM, AlertLevel.LOW]:
                     if alarm_score >= self.thresholds[level] + self.hysteresis_up:
                         return level
+
+            # Dentro da faixa de histerese: mantém o nível anterior (antes caía na
+            # classificação base, o que causava exatamente o "flapping" a evitar)
+            if (
+                previous_level in self.thresholds
+                and prev_threshold - self.hysteresis_down <= alarm_score <= prev_threshold + self.hysteresis_up
+            ):
+                return previous_level
 
         # Classificação base
         if alarm_score >= self.thresholds[AlertLevel.CRITICAL]:
@@ -96,9 +99,7 @@ class AlertService:
         """
         if level == AlertLevel.CRITICAL:
             return True
-        if level == AlertLevel.HIGH and hitl_approved:
-            return True
-        return False
+        return bool(level == AlertLevel.HIGH and hitl_approved)
 
 
 class AlertStore:
@@ -110,7 +111,7 @@ class AlertStore:
 
     def __init__(self):
         self._alerts: dict[str, dict] = {}
-        self._callbacks: List[callable] = []
+        self._callbacks: list[callable] = []
 
     def add_alert(self, alert: dict) -> dict:
         """Adiciona alerta e notifica callbacks."""
@@ -120,20 +121,16 @@ class AlertStore:
         for callback in self._callbacks:
             try:
                 callback(alert)
-            except Exception as e:
-                logger.error(f"Erro em callback de alerta: {e}")
+            except Exception:
+                logger.exception("Erro em callback de alerta")
 
         return alert
 
-    def get_alert(self, alert_id: str) -> Optional[dict]:
+    def get_alert(self, alert_id: str) -> dict | None:
         """Obtém alerta por ID."""
         return self._alerts.get(alert_id)
 
-    def list_alerts(
-        self,
-        status: Optional[str] = None,
-        limit: int = 100
-    ) -> List[dict]:
+    def list_alerts(self, status: str | None = None, limit: int = 100) -> list[dict]:
         """Lista alertas com filtro opcional de status."""
         alerts = list(self._alerts.values())
 
@@ -145,7 +142,7 @@ class AlertStore:
 
         return alerts[:limit]
 
-    def update_alert(self, alert_id: str, updates: dict) -> Optional[dict]:
+    def update_alert(self, alert_id: str, updates: dict) -> dict | None:
         """Atualiza alerta existente."""
         if alert_id not in self._alerts:
             return None
@@ -160,10 +157,7 @@ class AlertStore:
     @property
     def pending_count(self) -> int:
         """Conta alertas pendentes de revisão HITL."""
-        return sum(
-            1 for a in self._alerts.values()
-            if a.get("status") == "pending"
-        )
+        return sum(1 for a in self._alerts.values() if a.get("status") == "pending")
 
 
 # Store global (em produção, usar banco de dados)

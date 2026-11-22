@@ -206,7 +206,7 @@ DEBUG=false
 ### Verificar Sintaxe Python
 
 ```bash
-python verify_syntax.py
+ruff check src tests main.py
 ```
 
 ### Gerar Chave de Criptografia
@@ -275,7 +275,7 @@ python -c "import secrets; print('JWT_SECRET=' + secrets.token_hex(32))" >> .env
 
 - **Issues:** https://github.com/Lelolima/O-olho-de-DEUS/issues
 - **Documentação:** `CLAUDE.md`
-- **Auditoria:** `AUDITORIA_SEGURANCA_VIES.md`
+- **Auditoria:** `docs/auditoria-seguranca-vies.md`
 - **Checklist:** `CHECKLIST_VERIFICACAO_FINAL.md`
 
 ---

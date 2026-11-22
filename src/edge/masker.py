@@ -5,6 +5,6 @@ Este arquivo provê compatibilidade de imports, redirecionando
 para a implementação principal em src/privacy/masker.py.
 """
 
-from src.privacy.masker import DynamicMasker, BoundingBox
+from src.privacy.masker import BoundingBox, DynamicMasker
 
-__all__ = ["DynamicMasker", "BoundingBox"]
+__all__ = ["BoundingBox", "DynamicMasker"]

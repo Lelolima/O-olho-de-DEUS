@@ -56,8 +56,7 @@ class Analyzer(Protocol):
 
     name: str
 
-    def process(self, frame: np.ndarray, timestamp: datetime, frame_index: int) -> list[Event]:
-        ...
+    def process(self, frame: np.ndarray, timestamp: datetime, frame_index: int) -> list[Event]: ...
 
 
 @dataclass
@@ -121,17 +120,19 @@ class VideoPipeline:
             self.last_masked_frame = masked
             faces_count = len(faces)
             if self.face_event_min_faces and faces_count >= self.face_event_min_faces:
-                events.append(Event(
-                    type="faces_detected",
-                    camera_id=self.camera_id,
-                    timestamp=timestamp,
-                    frame_index=frame_index,
-                    alarm_score=min(1.0, 0.3 + 0.1 * faces_count),
-                    details={
-                        "faces_count": faces_count,
-                        "bounding_boxes": [list(map(int, f.bounding_box)) for f in faces],
-                    },
-                ))
+                events.append(
+                    Event(
+                        type="faces_detected",
+                        camera_id=self.camera_id,
+                        timestamp=timestamp,
+                        frame_index=frame_index,
+                        alarm_score=min(1.0, 0.3 + 0.1 * faces_count),
+                        details={
+                            "faces_count": faces_count,
+                            "bounding_boxes": [list(map(int, f.bounding_box)) for f in faces],
+                        },
+                    )
+                )
 
         for analyzer in self.analyzers:
             for event in analyzer.process(frame, timestamp, frame_index):

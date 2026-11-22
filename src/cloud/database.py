@@ -19,13 +19,14 @@ Uso:
 
 import logging
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
 from contextlib import contextmanager
 
-from .models.incident import Incident, Evidence, MerkleBatch
-from .models.hitl_decision import HitlDecision, OperatorSession
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from .models.hitl_decision import HitlDecision
+from .models.incident import Evidence, Incident, MerkleBatch
 
 logger = logging.getLogger(__name__)
 
@@ -41,26 +42,18 @@ if USE_SQLITE:
     if not os.environ.get("DATABASE_URL"):
         logger.info("DATABASE_URL não definido: usando SQLite local (%s)", SQLITE_URL)
     DATABASE_URL = SQLITE_URL
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool
-    )
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 else:
     engine = create_engine(
         DATABASE_URL,
         pool_size=20,
         max_overflow=40,
         pool_pre_ping=True,  # Verifica conexões antes de usar
-        pool_recycle=3600    # Recicla após 1 hora
+        pool_recycle=3600,  # Recicla após 1 hora
     )
 
 # Session factory
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base para modelos (antes: Incident.__class__.metadata -> AttributeError na importação)
 from .models.incident import Base  # noqa: E402
@@ -118,6 +111,7 @@ def get_db():
 
 # === Repositórios ===
 
+
 class IncidentRepository:
     """Repositório para operações com Incidentes."""
 
@@ -134,16 +128,10 @@ class IncidentRepository:
 
     def get_by_id(self, incident_id: str) -> Incident | None:
         """Busca incidente por ID."""
-        return self.db.query(Incident).filter(
-            Incident.id == incident_id
-        ).first()
+        return self.db.query(Incident).filter(Incident.id == incident_id).first()
 
     def list(
-        self,
-        status: str | None = None,
-        camera_id: str | None = None,
-        limit: int = 100,
-        offset: int = 0
+        self, status: str | None = None, camera_id: str | None = None, limit: int = 100, offset: int = 0
     ) -> list[Incident]:
         """Lista incidentes com filtros."""
         query = self.db.query(Incident)
@@ -153,12 +141,7 @@ class IncidentRepository:
         if camera_id:
             query = query.filter(Incident.camera_id == camera_id)
 
-        return (
-            query.order_by(Incident.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
+        return query.order_by(Incident.created_at.desc()).offset(offset).limit(limit).all()
 
     def update_status(
         self,
@@ -166,7 +149,7 @@ class IncidentRepository:
         status: str,
         operator_id: str | None = None,
         decision: str | None = None,
-        justification: str | None = None
+        justification: str | None = None,
     ) -> Incident | None:
         """Atualiza status de incidente."""
         incident = self.get_by_id(incident_id)
@@ -191,10 +174,7 @@ class IncidentRepository:
         """Conta incidentes por status."""
         from sqlalchemy import func
 
-        results = self.db.query(
-            Incident.status,
-            func.count(Incident.id)
-        ).group_by(Incident.status).all()
+        results = self.db.query(Incident.status, func.count(Incident.id)).group_by(Incident.status).all()
 
         return {status: count for status, count in results}
 
@@ -215,15 +195,11 @@ class EvidenceRepository:
 
     def get_by_id(self, evidence_id: str) -> Evidence | None:
         """Busca evidência por ID."""
-        return self.db.query(Evidence).filter(
-            Evidence.id == evidence_id
-        ).first()
+        return self.db.query(Evidence).filter(Evidence.id == evidence_id).first()
 
     def list_by_incident(self, incident_id: str) -> list[Evidence]:
         """Lista evidências de um incidente."""
-        return self.db.query(Evidence).filter(
-            Evidence.incident_id == incident_id
-        ).all()
+        return self.db.query(Evidence).filter(Evidence.incident_id == incident_id).all()
 
     def verify(self, evidence_id: str) -> Evidence | None:
         """Marca evidência como verificada."""
@@ -254,9 +230,7 @@ class MerkleBatchRepository:
 
     def get_by_root(self, merkle_root: str) -> MerkleBatch | None:
         """Busca batch por Merkle root."""
-        return self.db.query(MerkleBatch).filter(
-            MerkleBatch.merkle_root == merkle_root
-        ).first()
+        return self.db.query(MerkleBatch).filter(MerkleBatch.merkle_root == merkle_root).first()
 
     def update_tsa_status(
         self,
@@ -265,12 +239,10 @@ class MerkleBatchRepository:
         tsa_url: str | None = None,
         tsa_cert_base64: str | None = None,
         tsa_serial: str | None = None,
-        tsa_gen_time: str | None = None
+        tsa_gen_time: str | None = None,
     ) -> MerkleBatch | None:
         """Atualiza status do carimbo TSA."""
-        batch = self.db.query(MerkleBatch).filter(
-            MerkleBatch.id == batch_id
-        ).first()
+        batch = self.db.query(MerkleBatch).filter(MerkleBatch.id == batch_id).first()
 
         if not batch:
             return None
@@ -306,11 +278,7 @@ class HitlDecisionRepository:
         self.db.refresh(decision)
         return decision
 
-    def list_by_operator(
-        self,
-        operator_id: str,
-        limit: int = 100
-    ) -> list[HitlDecision]:
+    def list_by_operator(self, operator_id: str, limit: int = 100) -> list[HitlDecision]:
         """Lista decisões de um operador."""
         return (
             self.db.query(HitlDecision)
@@ -324,23 +292,23 @@ class HitlDecisionRepository:
         """Retorna estatísticas de um operador."""
         from sqlalchemy import func
 
-        total = self.db.query(func.count(HitlDecision.id)).filter(
-            HitlDecision.operator_id == operator_id
-        ).scalar()
+        total = self.db.query(func.count(HitlDecision.id)).filter(HitlDecision.operator_id == operator_id).scalar()
 
-        escalations = self.db.query(func.count(HitlDecision.id)).filter(
-            HitlDecision.operator_id == operator_id,
-            HitlDecision.decision == "escalate"
-        ).scalar()
+        escalations = (
+            self.db.query(func.count(HitlDecision.id))
+            .filter(HitlDecision.operator_id == operator_id, HitlDecision.decision == "escalate")
+            .scalar()
+        )
 
-        dismissals = self.db.query(func.count(HitlDecision.id)).filter(
-            HitlDecision.operator_id == operator_id,
-            HitlDecision.decision == "dismiss"
-        ).scalar()
+        dismissals = (
+            self.db.query(func.count(HitlDecision.id))
+            .filter(HitlDecision.operator_id == operator_id, HitlDecision.decision == "dismiss")
+            .scalar()
+        )
 
         return {
             "total": total,
             "escalations": escalations,
             "dismissals": dismissals,
-            "escalation_rate": escalations / total if total > 0 else 0
+            "escalation_rate": escalations / total if total > 0 else 0,
         }

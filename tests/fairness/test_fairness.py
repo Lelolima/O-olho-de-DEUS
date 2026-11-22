@@ -1,8 +1,10 @@
 """Testes para Fairness Metrics."""
 
 import unittest
+
 import numpy as np
-from src.fairness.metrics import FairnessMetrics, BiasDetector
+
+from src.fairness.metrics import BiasDetector, FairnessMetrics
 
 
 class TestFairnessMetrics(unittest.TestCase):
@@ -81,11 +83,7 @@ class TestBiasDetector(unittest.TestCase):
 
     def test_record_decision(self):
         """Testa registro de decisões."""
-        self.detector.record(
-            prediction=1,
-            ground_truth=1,
-            sensitive_attr="A"
-        )
+        self.detector.record(prediction=1, ground_truth=1, sensitive_attr="A")
 
         self.assertEqual(len(self.detector._predictions), 1)
 

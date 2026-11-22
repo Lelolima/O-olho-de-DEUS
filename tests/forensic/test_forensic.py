@@ -1,12 +1,10 @@
 """Testes para Forensic Logging - Merkle Tree e Timestamp."""
 
 import unittest
-import hashlib
-import json
-from datetime import datetime
-from src.forensic.merkle_tree import MerkleTree, MerkleProof
-from src.forensic.timestamp import TimestampAuthority
+
 from src.forensic.logger import ForensicLogger
+from src.forensic.merkle_tree import MerkleTree
+from src.forensic.timestamp import TimestampAuthority
 
 
 class TestMerkleTree(unittest.TestCase):
@@ -26,7 +24,7 @@ class TestMerkleTree(unittest.TestCase):
             {"id": "evt1", "hash": "abc"},
             {"id": "evt2", "hash": "def"},
             {"id": "evt3", "hash": "ghi"},
-            {"id": "evt4", "hash": "jkl"}
+            {"id": "evt4", "hash": "jkl"},
         ]
         tree = MerkleTree(leaves)
 
@@ -34,10 +32,7 @@ class TestMerkleTree(unittest.TestCase):
 
     def test_proof_verification(self):
         """Testa geração e verificação de prova Merkle."""
-        leaves = [
-            {"id": f"evt{i}", "hash": f"hash{i}"}
-            for i in range(8)
-        ]
+        leaves = [{"id": f"evt{i}", "hash": f"hash{i}"} for i in range(8)]
         tree = MerkleTree(leaves)
 
         # Gera prova para primeira folha
@@ -79,11 +74,12 @@ class TestForensicLogger(unittest.TestCase):
     def setUp(self):
         """Configura teste."""
         import tempfile
+
         self.temp_dir = tempfile.mkdtemp()
         self.logger = ForensicLogger(
             log_dir=self.temp_dir,
             tsa_enabled=False,  # Desabilita TSA para testes
-            batch_size=3  # Batch pequeno para testes
+            batch_size=3,  # Batch pequeno para testes
         )
 
     def test_log_evidence(self):
@@ -92,7 +88,7 @@ class TestForensicLogger(unittest.TestCase):
             "id": "evt_test_001",
             "timestamp": "2026-07-03T14:00:00Z",
             "camera_id": "CAM-001",
-            "alarm_score": 0.95
+            "alarm_score": 0.95,
         }
 
         result = self.logger.log_evidence(evidence)
@@ -103,12 +99,14 @@ class TestForensicLogger(unittest.TestCase):
     def test_batch_flush(self):
         """Testa flush de batch após atingir threshold."""
         for i in range(3):
-            self.logger.log_evidence({
-                "id": f"evt_test_{i:03d}",
-                "timestamp": "2026-07-03T14:00:00Z",
-                "camera_id": "CAM-001",
-                "alarm_score": 0.90
-            })
+            self.logger.log_evidence(
+                {
+                    "id": f"evt_test_{i:03d}",
+                    "timestamp": "2026-07-03T14:00:00Z",
+                    "camera_id": "CAM-001",
+                    "alarm_score": 0.90,
+                }
+            )
 
         # Batch deve ter sido flushado automaticamente
         self.assertEqual(self.logger.total_batches_flushed, 1)
@@ -120,16 +118,13 @@ class TestForensicLogger(unittest.TestCase):
             "id": "evt_verify_test",
             "timestamp": "2026-07-03T14:00:00Z",
             "camera_id": "CAM-001",
-            "alarm_score": 0.95
+            "alarm_score": 0.95,
         }
         self.logger.log_evidence(evidence)
         batch = self.logger.flush_batch()
 
         # Verifica cadeia
-        result = self.logger.verify_evidence_chain(
-            "evt_verify_test",
-            batch
-        )
+        result = self.logger.verify_evidence_chain("evt_verify_test", batch)
 
         self.assertTrue(result["evidence_found"])
         # Antes a verificação lançava ValueError (MerkleTree([])); agora valida de fato
@@ -137,12 +132,14 @@ class TestForensicLogger(unittest.TestCase):
 
     def test_evidence_chain_rejects_tampered_root(self):
         """Batch com raiz Merkle adulterada não pode ser considerado válido."""
-        self.logger.log_evidence({
-            "id": "evt_tamper",
-            "timestamp": "2026-07-03T14:00:00Z",
-            "camera_id": "CAM-001",
-            "alarm_score": 0.95,
-        })
+        self.logger.log_evidence(
+            {
+                "id": "evt_tamper",
+                "timestamp": "2026-07-03T14:00:00Z",
+                "camera_id": "CAM-001",
+                "alarm_score": 0.95,
+            }
+        )
         batch = dict(self.logger.flush_batch())
         batch["merkle_root"] = "00" * 32
         result = self.logger.verify_evidence_chain("evt_tamper", batch)
@@ -160,12 +157,41 @@ class TestTimestampAuthority(unittest.TestCase):
         response = tsa.request_timestamp("abc123")
         self.assertEqual(response.status, "rejected")
 
-        # Hash válido (64 caracteres hex)
-        valid_hash = "a" * 64
-        # Nota: TSA real pode falhar em testes sem rede
+        # Hash válido (64 caracteres hex) exige rede; não testado aqui
         # response = tsa.request_timestamp(valid_hash)
         # self.assertIn(response.status, ["granted", "rejected"])
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestTimestampOffline(unittest.TestCase):
+    """Partes do RFC 3161 que não exigem rede."""
+
+    def setUp(self):
+        from src.forensic.timestamp import TimestampAuthority
+
+        self.tsa = TimestampAuthority(tsa_url="https://tsa.invalid/tsr")
+
+    def test_tsq_is_der_sequence_with_hash(self):
+        digest = "ab" * 32
+        tsq = self.tsa._create_tsq(digest)
+        self.assertEqual(tsq[0], 0x30)
+        self.assertIn(bytes.fromhex(digest), tsq)
+
+    def test_non_hex_hash_is_rejected_without_network(self):
+        self.assertEqual(self.tsa.request_timestamp("z" * 64).status, "rejected")
+
+    def test_der_length_long_form(self):
+        self.assertEqual(self.tsa._der_length(5), b"\x05")
+        self.assertEqual(self.tsa._der_length(300), b"\x82\x01\x2c")
+
+    def test_malformed_tsr(self):
+        self.assertEqual(self.tsa._parse_tsr(b"\x00\x01").status, "rejected")
+        self.assertEqual(self.tsa._extract_pki_status(b"\x31\x00")[0], -1)
+        self.assertEqual(self.tsa._extract_pki_status(b"\x30\x03\x02\x01\x00")[0], 0)
+
+    def test_verify_rejects_garbage(self):
+        self.assertFalse(self.tsa.verify_timestamp("@@não-base64@@", "a" * 64))
+        self.assertFalse(self.tsa.verify_timestamp("AAAA", "a" * 64))

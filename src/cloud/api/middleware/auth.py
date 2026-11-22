@@ -1,17 +1,16 @@
 """API Middleware - Autenticação, logging e CORS."""
 
-from fastapi import Depends, Request, HTTPException, status
-from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from datetime import datetime, timedelta
-from typing import Optional
 import hashlib
 import hmac
 import json
-import jwt
 import logging
 import os
 import secrets
+from datetime import datetime, timedelta
+
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +19,16 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 # CORREÇÃO DE SEGURANÇA: JWT Secret de variável de ambiente
 # Se não existir, gera um segredo criptográfico seguro (256-bit)
-JWT_SECRET = os.environ.get("JWT_SECRET")
+MIN_JWT_SECRET_LENGTH = 32
+
+JWT_SECRET = os.environ.get("JWT_SECRET", "").strip()
+if JWT_SECRET and len(JWT_SECRET) < MIN_JWT_SECRET_LENGTH:
+    logger.error(f"JWT_SECRET tem menos de {MIN_JWT_SECRET_LENGTH} caracteres (valor de exemplo?) e foi ignorado")
+    JWT_SECRET = ""
 if not JWT_SECRET:
     JWT_SECRET = secrets.token_hex(32)  # 256-bit
     logger.warning(
-        "⚠️ JWT_SECRET não definido em variável de ambiente. "
-        "Um segredo temporário foi gerado. Para produção, defina JWT_SECRET no .env"
+        "JWT_SECRET não definido. Um segredo temporário foi gerado. Para produção, defina JWT_SECRET no .env"
     )
 
 JWT_ALGORITHM = "HS256"
@@ -48,9 +51,7 @@ def verify_password(password: str, encoded: str) -> bool:
         algo, iterations, salt_hex, hash_hex = encoded.split("$")
         if algo != "pbkdf2_sha256":
             return False
-        digest = hashlib.pbkdf2_hmac(
-            "sha256", password.encode("utf-8"), bytes.fromhex(salt_hex), int(iterations)
-        )
+        digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt_hex), int(iterations))
     except (ValueError, AttributeError):
         return False
     return hmac.compare_digest(digest.hex(), hash_hex)
@@ -65,7 +66,7 @@ def _load_users_from_env() -> dict:
     if not raw:
         logger.warning(
             "OPERATOR_USERS não definido: nenhum operador pode autenticar. "
-            "Gere hashes com: python -m src.cloud.api.middleware.auth <senha>"
+            "Configure com: python -m src.tools.bootstrap_env --operator <nome>"
         )
         return {}
     try:
@@ -92,7 +93,7 @@ class OperatorAuth:
     - Banco de dados de usuários
     """
 
-    def __init__(self, secret: str = JWT_SECRET, users: Optional[dict] = None):
+    def __init__(self, secret: str = JWT_SECRET, users: dict | None = None):
         self.secret = secret
 
         # SEGURANÇA (auditoria 2026-11-22): as senhas em texto puro que estavam
@@ -104,7 +105,7 @@ class OperatorAuth:
         """Há ao menos um operador configurado?"""
         return bool(self._users)
 
-    def authenticate(self, username: str, password: str) -> Optional[dict]:
+    def authenticate(self, username: str, password: str) -> dict | None:
         """Verifica credenciais (comparação em tempo constante)."""
         user = self._users.get(username)
         if not user or not isinstance(password, str):
@@ -121,19 +122,15 @@ class OperatorAuth:
             "sub": username,
             "role": role,
             "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRATION_HOURS),
-            "iat": datetime.utcnow()
+            "iat": datetime.utcnow(),
         }
         return jwt.encode(payload, self.secret, algorithm=JWT_ALGORITHM)
 
-    def verify_token(self, token: str) -> Optional[dict]:
+    def verify_token(self, token: str) -> dict | None:
         """Verifica e decode JWT token."""
         try:
             payload = jwt.decode(token, self.secret, algorithms=[JWT_ALGORITHM])
-            return {
-                "username": payload["sub"],
-                "role": payload["role"],
-                "exp": datetime.fromtimestamp(payload["exp"])
-            }
+            return {"username": payload["sub"], "role": payload["role"], "exp": datetime.fromtimestamp(payload["exp"])}
         except jwt.ExpiredSignatureError:
             return None
         except jwt.InvalidTokenError:
@@ -144,7 +141,7 @@ class OperatorAuth:
 operator_auth = OperatorAuth()
 
 
-async def authenticate_websocket(websocket) -> Optional[dict]:
+async def authenticate_websocket(websocket) -> dict | None:
     """Valida ``?token=<JWT>`` de um WebSocket; fecha com 1008 se inválido.
 
     Navegadores não enviam cabeçalho Authorization em WebSockets, por isso o token
@@ -168,10 +165,7 @@ async def get_current_operator(token: str = Depends(oauth2_scheme)) -> dict:
     """
     operator = operator_auth.verify_token(token)
     if operator is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido ou expirado"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido ou expirado")
     return operator
 
 
@@ -184,13 +178,12 @@ def require_role(required_role: str):
         async def admin_route(operator=Depends(require_role("admin"))):
             return {"action": "deleted"}
     """
+
     async def role_checker(operator: dict = Depends(get_current_operator)):
         if operator["role"] != required_role and operator["role"] != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Role {required_role} requerida"
-            )
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Role {required_role} requerida")
         return operator
+
     return role_checker
 
 

@@ -6,11 +6,9 @@ rotação automática de chaves e integração opcional com cofres de secretos.
 """
 
 import base64
-import hashlib
 import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 from pathlib import Path
 
 from cryptography.fernet import Fernet
@@ -33,17 +31,17 @@ class EncryptedData:
             "ciphertext_b64": base64.b64encode(self.ciphertext).decode(),
             "key_id": self.key_id,
             "nonce_b64": base64.b64encode(self.nonce).decode(),
-            "created_at": self.created_at.isoformat()
+            "created_at": self.created_at.isoformat(),
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'EncryptedData':
+    def from_dict(cls, data: dict) -> "EncryptedData":
         """Deserializa de dict."""
         return cls(
             ciphertext=base64.b64decode(data["ciphertext_b64"]),
             key_id=data["key_id"],
             nonce=base64.b64decode(data["nonce_b64"]),
-            created_at=datetime.fromisoformat(data["created_at"])
+            created_at=datetime.fromisoformat(data["created_at"]),
         )
 
 
@@ -53,7 +51,7 @@ class KeyMetadata:
 
     key_id: str
     created_at: datetime
-    expires_at: Optional[datetime]
+    expires_at: datetime | None
     is_active: bool
     usage_count: int = 0
     max_usages: int = 10000
@@ -64,9 +62,7 @@ class KeyMetadata:
         if self.expires_at and datetime.now() > self.expires_at:
             return True
         # Verifica por uso
-        if self.usage_count >= self.max_usages:
-            return True
-        return False
+        return self.usage_count >= self.max_usages
 
     def to_dict(self) -> dict:
         """Serializa para dict."""
@@ -76,7 +72,7 @@ class KeyMetadata:
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "is_active": self.is_active,
             "usage_count": self.usage_count,
-            "max_usages": self.max_usages
+            "max_usages": self.max_usages,
         }
 
 
@@ -95,10 +91,10 @@ class EncryptionManager:
 
     def __init__(
         self,
-        master_key: Optional[bytes] = None,
+        master_key: bytes | None = None,
         key_rotation_days: int = 30,
         max_usages_per_key: int = 10000,
-        keys_dir: Optional[str] = None
+        keys_dir: str | None = None,
     ):
         """
         Inicializa EncryptionManager.
@@ -114,11 +110,11 @@ class EncryptionManager:
         self.keys_dir = Path(keys_dir) if keys_dir else None
 
         # Chaves ativas (key_id -> Fernet)
-        self._keys: Dict[str, Fernet] = {}
-        self._key_metadata: Dict[str, KeyMetadata] = {}
+        self._keys: dict[str, Fernet] = {}
+        self._key_metadata: dict[str, KeyMetadata] = {}
 
         # Chave ativa atual
-        self._active_key_id: Optional[str] = None
+        self._active_key_id: str | None = None
 
         # Inicializa ou carrega chave mestra
         if master_key:
@@ -150,13 +146,11 @@ class EncryptionManager:
                 self.rotate_key()
 
         # Criptografa com chave ativa
-        fernet = self._keys[self._active_key_id]
+        key_id = self.get_active_key_id()
+        fernet = self._keys[key_id]
         ciphertext = fernet.encrypt(data)
 
-        return EncryptedData(
-            ciphertext=ciphertext,
-            key_id=self._active_key_id
-        )
+        return EncryptedData(ciphertext=ciphertext, key_id=key_id)
 
     def decrypt(self, encrypted: EncryptedData) -> bytes:
         """
@@ -196,7 +190,7 @@ class EncryptionManager:
         """
         return self._create_new_key()
 
-    def get_key_metadata(self, key_id: Optional[str] = None) -> KeyMetadata:
+    def get_key_metadata(self, key_id: str | None = None) -> KeyMetadata:
         """
         Retorna metadados de uma chave.
 
@@ -209,7 +203,9 @@ class EncryptionManager:
         return self._key_metadata[kid]
 
     def get_active_key_id(self) -> str:
-        """Retorna ID da chave ativa."""
+        """Retorna ID da chave ativa (``RuntimeError`` se nenhuma chave existir)."""
+        if not self._active_key_id:
+            raise RuntimeError("Nenhuma chave de criptografia ativa")
         return self._active_key_id
 
     def _generate_master_key(self) -> bytes:
@@ -231,6 +227,7 @@ class EncryptionManager:
     def _generate_key_id(self) -> str:
         """Gera ID único para chave."""
         import uuid
+
         return f"key_{uuid.uuid4().hex[:16]}"
 
     def _derive_key(self, key_id: str) -> bytes:
@@ -266,7 +263,7 @@ class EncryptionManager:
             created_at=datetime.now(),
             expires_at=datetime.now() + timedelta(days=self.key_rotation_days),
             is_active=True,
-            usage_count=0
+            usage_count=0,
         )
 
         # Desativa chave anterior
@@ -290,10 +287,7 @@ class EncryptionManager:
         keys_file = self.keys_dir / "keys.json"
         import json
 
-        keys_data = {
-            kid: meta.to_dict()
-            for kid, meta in self._key_metadata.items()
-        }
+        keys_data = {kid: meta.to_dict() for kid, meta in self._key_metadata.items()}
 
         with open(keys_file, "w") as f:
             json.dump(keys_data, f, indent=2)
@@ -308,6 +302,7 @@ class EncryptionManager:
             return
 
         import json
+
         with open(keys_file) as f:
             keys_data = json.load(f)
 
@@ -324,7 +319,7 @@ class EncryptionManager:
                 expires_at=datetime.fromisoformat(data["expires_at"]) if data["expires_at"] else None,
                 is_active=data["is_active"],
                 usage_count=data["usage_count"],
-                max_usages=data["max_usages"]
+                max_usages=data["max_usages"],
             )
 
             # Define ativa
@@ -338,13 +333,14 @@ class EncryptionManager:
     def _load_key_from_disk(self, key_id: str):
         """Carrega chave específica do disco."""
         if not self.keys_dir:
-            raise KeyError(f"keys_dir não configurado")
+            raise KeyError("keys_dir não configurado")
 
         keys_file = self.keys_dir / "keys.json"
         if not keys_file.exists():
-            raise KeyError(f"Arquivo de chaves não existe")
+            raise KeyError("Arquivo de chaves não existe")
 
         import json
+
         with open(keys_file) as f:
             keys_data = json.load(f)
 
@@ -362,7 +358,7 @@ class EncryptionManager:
             expires_at=datetime.fromisoformat(data["expires_at"]) if data["expires_at"] else None,
             is_active=data["is_active"],
             usage_count=data["usage_count"],
-            max_usages=data["max_usages"]
+            max_usages=data["max_usages"],
         )
 
 
@@ -377,7 +373,7 @@ class AuditLogger:
         self.log_file = Path(log_file)
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
-    def log(self, operation: str, key_id: str, details: Optional[dict] = None):
+    def log(self, operation: str, key_id: str, details: dict | None = None):
         """
         Registra operação no audit log.
 
@@ -390,9 +386,10 @@ class AuditLogger:
             "timestamp": datetime.now().isoformat(),
             "operation": operation,
             "key_id": key_id,
-            "details": details or {}
+            "details": details or {},
         }
 
         import json
+
         with open(self.log_file, "a") as f:
             f.write(json.dumps(entry) + "\n")

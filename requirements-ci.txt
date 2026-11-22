@@ -16,3 +16,8 @@ httpx==0.28.1
 pytest==9.2.0
 pytest-asyncio==1.5.0
 ruff==0.17.6
+pytest-cov==7.1.0
+coverage==7.17.4
+mypy==2.4.1
+types-requests==2.33.0.20261030
+types-PyYAML==6.0.12.20261122

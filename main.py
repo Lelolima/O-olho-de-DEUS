@@ -52,7 +52,8 @@ def load_config(config_path: str | None) -> dict[str, Any]:
     if not config_path or not Path(config_path).exists():
         if config_path:
             logger.warning(f"Arquivo de configuração não encontrado: {config_path}; usando padrões")
-        return json.loads(json.dumps(DEFAULT_CONFIG))
+        defaults: dict[str, Any] = json.loads(json.dumps(DEFAULT_CONFIG))
+        return defaults
 
     path = Path(config_path)
     with path.open(encoding="utf-8") as fh:
@@ -64,7 +65,8 @@ def load_config(config_path: str | None) -> dict[str, Any]:
             data = yaml.safe_load(fh) or {}
     if not isinstance(data, dict):
         raise ValueError(f"Configuração inválida em {config_path}: esperado um mapeamento")
-    return expand_env(data)
+    expanded: dict[str, Any] = expand_env(data)
+    return expanded
 
 
 def setup_logging(level: str = "INFO", log_file: str | None = None) -> None:
@@ -111,10 +113,7 @@ def run_edge_mode(config: dict[str, Any], source: str | None = None, max_frames:
     """Processa ``--source`` ou as câmeras do config. Retorna código de saída."""
     from src.edge.sources import VideoSourceError, redact_url
 
-    if source is not None:
-        cameras = [{"id": "CLI", "url": source}]
-    else:
-        cameras = config.get("cameras") or []
+    cameras = [{"id": "CLI", "url": source}] if source is not None else config.get("cameras") or []
     if not cameras:
         logger.error("Nenhuma câmera configurada (seção 'cameras' do config) e nenhum --source informado")
         return 2
@@ -167,7 +166,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source", "-s", help="fonte única: arquivo de vídeo, índice de webcam ou URL rtsp/http")
     parser.add_argument("--max-frames", type=int, default=None, help="limite de frames por fonte")
     parser.add_argument("--log-level", default=None, help="DEBUG, INFO, WARNING, ERROR")
+    parser.add_argument("--env-file", default=".env", help="arquivo .env a carregar (padrão: .env)")
     args = parser.parse_args(argv)
+
+    from src.envfile import load_env_file
+
+    load_env_file(args.env_file)
 
     setup_logging(args.log_level or "INFO")
     config = load_config(args.config)

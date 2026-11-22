@@ -2,8 +2,8 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 class NotificationConfig:
     """Configuração de notificação."""
 
-    webhook_url: Optional[str] = None
-    email_recipients: List[str] = None
-    smtp_server: Optional[Dict[str, Any]] = None
-    sms_provider: Optional[str] = None
-    sms_credentials: Optional[Dict[str, Any]] = None
+    webhook_url: str | None = None
+    email_recipients: list[str] = None
+    smtp_server: dict[str, Any] | None = None
+    sms_provider: str | None = None
+    sms_credentials: dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.email_recipients is None:
@@ -42,7 +42,7 @@ class NotificationService:
         await service.send_alert(alert_data)
     """
 
-    def __init__(self, config: Optional[NotificationConfig] = None):
+    def __init__(self, config: NotificationConfig | None = None):
         self.config = config or NotificationConfig()
         self._sent_count = 0
         self._failed_count = 0
@@ -64,7 +64,7 @@ class NotificationService:
             "sent_at": datetime.now().isoformat(),
             "webhook": {"success": False, "error": None},
             "email": {"success": False, "error": None},
-            "sms": {"success": False, "error": None}
+            "sms": {"success": False, "error": None},
         }
 
         # Envia webhook
@@ -94,21 +94,21 @@ class NotificationService:
         import aiohttp
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.config.webhook_url,
-                    json=alert_data,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    if response.status in [200, 201, 204]:
-                        logger.info(f"Webhook enviado: {alert_data.get('id')}")
-                        return {"success": True, "status": response.status}
-                    else:
-                        error = f"HTTP {response.status}"
-                        logger.warning(f"Webhook falhou: {error}")
-                        return {"success": False, "error": error}
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(
+                    self.config.webhook_url, json=alert_data, timeout=aiohttp.ClientTimeout(total=10)
+                ) as response,
+            ):
+                if response.status in [200, 201, 204]:
+                    logger.info(f"Webhook enviado: {alert_data.get('id')}")
+                    return {"success": True, "status": response.status}
+                else:
+                    error = f"HTTP {response.status}"
+                    logger.warning(f"Webhook falhou: {error}")
+                    return {"success": False, "error": error}
 
-        except Exception as e:
+        except (aiohttp.ClientError, TimeoutError) as e:
             logger.error(f"Erro webhook: {e}")
             return {"success": False, "error": str(e)}
 
@@ -125,20 +125,15 @@ class NotificationService:
         return {
             "success": True,
             "recipients": self.config.email_recipients,
-            "note": "Email não implementado - requer configuração SMTP"
+            "note": "Email não implementado - requer configuração SMTP",
         }
 
     async def _send_sms(self, alert_data: dict) -> dict:
         """Envia SMS para alertas críticos."""
         # Em produção, integrar com Twilio ou AWS SNS
-        logger.warning(
-            f"SMS seria enviado para alerta CRÍTICO: {alert_data.get('id')}"
-        )
+        logger.warning(f"SMS seria enviado para alerta CRÍTICO: {alert_data.get('id')}")
 
-        return {
-            "success": False,
-            "note": "SMS não implementado - requer configuração Twilio/AWS SNS"
-        }
+        return {"success": False, "note": "SMS não implementado - requer configuração Twilio/AWS SNS"}
 
     def get_stats(self) -> dict:
         """Retorna estatísticas de notificações."""
@@ -147,7 +142,7 @@ class NotificationService:
             "total": total,
             "sent": self._sent_count,
             "failed": self._failed_count,
-            "success_rate": self._sent_count / total if total > 0 else 0.0
+            "success_rate": self._sent_count / total if total > 0 else 0.0,
         }
 
 

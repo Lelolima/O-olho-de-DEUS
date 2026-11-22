@@ -1,12 +1,11 @@
 """HITL Routes - API para revisão humana de alertas."""
 
-from fastapi import APIRouter, HTTPException, Depends, WebSocket
-from typing import List, Optional
-from datetime import datetime
-from pydantic import BaseModel, Field
-
 import logging
+from datetime import datetime
 
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.cloud.api.middleware.auth import authenticate_websocket, get_current_operator
@@ -19,13 +18,14 @@ router = APIRouter(prefix="/api/v1/hitl", tags=["hitl"])
 
 # === Schemas ===
 
+
 class HitlReviewRequest(BaseModel):
     """Solicitação de revisão HITL."""
 
     alert_id: str
     decision: str  # "dismiss" | "escalate" | "request_more_info"
-    justification: Optional[str] = Field(None, max_length=500)
-    confidence_override: Optional[float] = Field(None, ge=0, le=1)
+    justification: str | None = Field(None, max_length=500)
+    confidence_override: float | None = Field(None, ge=0, le=1)
 
 
 class HitlDecision(BaseModel):
@@ -35,7 +35,7 @@ class HitlDecision(BaseModel):
     alert_id: str
     operator_id: str
     decision: str
-    justification: Optional[str]
+    justification: str | None
     decided_at: datetime
     alert_score: float
     alert_camera: str
@@ -59,6 +59,7 @@ _operator_stats: dict[str, dict] = {}
 
 
 # === Routes ===
+
 
 @router.post("/review", response_model=HitlDecision)
 async def submit_hitl_review(
@@ -86,7 +87,7 @@ async def submit_hitl_review(
     incident = None
     try:
         incident = IncidentRepository(db).get_by_id(review.alert_id)
-    except Exception as exc:  # banco indisponível: segue com o fallback em memória
+    except SQLAlchemyError as exc:  # banco indisponível: segue com o fallback em memória
         logger.warning(f"Banco indisponível na revisão HITL: {exc}")
 
     if incident is not None:
@@ -105,7 +106,7 @@ async def submit_hitl_review(
         "justification": review.justification,
         "decided_at": datetime.now(),
         "alert_score": alert_data["alarm_score"],
-        "alert_camera": alert_data["camera_id"]
+        "alert_camera": alert_data["camera_id"],
     }
 
     _decisions_store[decision_id] = decision_data
@@ -117,7 +118,7 @@ async def submit_hitl_review(
             "total_reviews": 0,
             "dismissals": 0,
             "escalations": 0,
-            "decision_times": []
+            "decision_times": [],
         }
 
     stats = _operator_stats[operator_id]
@@ -150,13 +151,10 @@ async def submit_hitl_review(
     return HitlDecision(**decision_data)
 
 
-@router.get("/decisions/{alert_id}", response_model=List[HitlDecision])
+@router.get("/decisions/{alert_id}", response_model=list[HitlDecision])
 async def get_alert_decisions(alert_id: str, operator: dict = Depends(get_current_operator)):
     """Retorna todas as decisões para um alerta (pode ter múltiplas)."""
-    decisions = [
-        d for d in _decisions_store.values()
-        if d["alert_id"] == alert_id
-    ]
+    decisions = [d for d in _decisions_store.values() if d["alert_id"] == alert_id]
     return [HitlDecision(**d) for d in decisions]
 
 
@@ -170,7 +168,7 @@ async def get_operator_stats(operator_id: str, operator: dict = Depends(get_curr
             dismissals=0,
             escalations=0,
             avg_decision_time_seconds=0.0,
-            escalation_rate=0.0
+            escalation_rate=0.0,
         )
 
     stats = _operator_stats[operator_id]
@@ -182,7 +180,7 @@ async def get_operator_stats(operator_id: str, operator: dict = Depends(get_curr
         dismissals=stats["dismissals"],
         escalations=stats["escalations"],
         avg_decision_time_seconds=0.0,  # TODO: Calcular
-        escalation_rate=stats["escalations"] / total if total > 0 else 0.0
+        escalation_rate=stats["escalations"] / total if total > 0 else 0.0,
     )
 
 
@@ -203,23 +201,22 @@ async def websocket_queue(websocket: WebSocket):
     try:
         while True:
             # Envia alertas pendentes
-            pending = [
-                a for a in _alerts_store.values()
-                if a["status"] == "pending" and a["requires_hitl"]
-            ]
+            pending = [a for a in _alerts_store.values() if a["status"] == "pending" and a["requires_hitl"]]
 
             if pending:
-                await websocket.send_json({
-                    "type": "queue_update",
-                    "pending_count": len(pending),
-                    "alerts": pending[:20]  # Top 20 mais recentes
-                })
+                await websocket.send_json(
+                    {
+                        "type": "queue_update",
+                        "pending_count": len(pending),
+                        "alerts": pending[:20],  # Top 20 mais recentes
+                    }
+                )
 
             # Aguarda 5 segundos antes de próximo update
             await websocket.receive_text()
 
-    except Exception:
-        pass
+    except WebSocketDisconnect:
+        logger.debug("Cliente do WebSocket da fila HITL desconectou")
 
 
 @router.get("/dashboard/summary")
@@ -239,5 +236,5 @@ async def get_dashboard_summary(operator: dict = Depends(get_current_operator)):
         "dismissed_count": len(dismissed),
         "total_alerts": len(_alerts_store),
         "avg_score_pending": sum(a["alarm_score"] for a in pending) / len(pending) if pending else 0,
-        "oldest_pending_minutes": (now - min(a["created_at"] for a in pending)).total_seconds() / 60 if pending else 0
+        "oldest_pending_minutes": (now - min(a["created_at"] for a in pending)).total_seconds() / 60 if pending else 0,
     }
