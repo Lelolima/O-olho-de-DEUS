@@ -100,6 +100,10 @@ class OperatorAuth:
         # (JSON com hashes PBKDF2). Sem ela, nenhum login é aceito.
         self._users = users if users is not None else _load_users_from_env()
 
+    def has_users(self) -> bool:
+        """Há ao menos um operador configurado?"""
+        return bool(self._users)
+
     def authenticate(self, username: str, password: str) -> Optional[dict]:
         """Verifica credenciais (comparação em tempo constante)."""
         user = self._users.get(username)
@@ -138,6 +142,19 @@ class OperatorAuth:
 
 # Auth global
 operator_auth = OperatorAuth()
+
+
+async def authenticate_websocket(websocket) -> Optional[dict]:
+    """Valida ``?token=<JWT>`` de um WebSocket; fecha com 1008 se inválido.
+
+    Navegadores não enviam cabeçalho Authorization em WebSockets, por isso o token
+    vai na query string (use sempre wss:// em produção).
+    """
+    operator = operator_auth.verify_token(websocket.query_params.get("token", ""))
+    if operator is None:
+        await websocket.close(code=1008, reason="Token inválido ou ausente")
+        return None
+    return operator
 
 
 async def get_current_operator(token: str = Depends(oauth2_scheme)) -> dict:

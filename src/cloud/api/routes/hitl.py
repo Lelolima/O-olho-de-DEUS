@@ -5,6 +5,15 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
 
+import logging
+
+from sqlalchemy.orm import Session
+
+from src.cloud.api.middleware.auth import authenticate_websocket, get_current_operator
+from src.cloud.database import IncidentRepository, get_db
+
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/v1/hitl", tags=["hitl"])
 
 
@@ -52,7 +61,11 @@ _operator_stats: dict[str, dict] = {}
 # === Routes ===
 
 @router.post("/review", response_model=HitlDecision)
-async def submit_hitl_review(review: HitlReviewRequest, operator_id: Optional[str] = "anonymous"):
+async def submit_hitl_review(
+    review: HitlReviewRequest,
+    operator: dict = Depends(get_current_operator),
+    db: Session = Depends(get_db),
+):
     """
     Operador submete decisão de revisão HITL.
 
@@ -60,12 +73,26 @@ async def submit_hitl_review(review: HitlReviewRequest, operator_id: Optional[st
     """
     import uuid
 
+    # Antes: operator_id vinha da query string (padrão "anonymous") e qualquer
+    # pessoa podia registrar decisões em nome de outra. Agora vem do JWT.
+    operator_id = operator["username"]
     decision_id = f"hitl_{uuid.uuid4().hex[:12]}"
 
-    # Recupera dados do alerta (em produção, buscar do PostgreSQL)
+    # Alertas criados pela API ficam no banco; o dicionário em memória é só o
+    # fallback quando o banco está indisponível. Antes só a memória era consultada,
+    # então a revisão nunca encontrava alertas persistidos.
     from src.cloud.api.routes.alerts import _alerts_store
 
-    alert_data = _alerts_store.get(review.alert_id)
+    incident = None
+    try:
+        incident = IncidentRepository(db).get_by_id(review.alert_id)
+    except Exception as exc:  # banco indisponível: segue com o fallback em memória
+        logger.warning(f"Banco indisponível na revisão HITL: {exc}")
+
+    if incident is not None:
+        alert_data = {"alarm_score": incident.alarm_score, "camera_id": incident.camera_id}
+    else:
+        alert_data = _alerts_store.get(review.alert_id)
     if not alert_data:
         raise HTTPException(status_code=404, detail="Alert não encontrado")
 
@@ -100,6 +127,15 @@ async def submit_hitl_review(review: HitlReviewRequest, operator_id: Optional[st
     elif review.decision == "escalate":
         stats["escalations"] += 1
 
+    if incident is not None and review.decision in ("dismiss", "escalate"):
+        IncidentRepository(db).update_status(
+            incident_id=review.alert_id,
+            status="dismissed" if review.decision == "dismiss" else "escalated",
+            operator_id=operator_id,
+            decision=review.decision,
+            justification=review.justification,
+        )
+
     # Atualiza alert (marca como revisado)
     alert_data["reviewed_at"] = datetime.now()
     alert_data["operator_id"] = operator_id
@@ -115,7 +151,7 @@ async def submit_hitl_review(review: HitlReviewRequest, operator_id: Optional[st
 
 
 @router.get("/decisions/{alert_id}", response_model=List[HitlDecision])
-async def get_alert_decisions(alert_id: str):
+async def get_alert_decisions(alert_id: str, operator: dict = Depends(get_current_operator)):
     """Retorna todas as decisões para um alerta (pode ter múltiplas)."""
     decisions = [
         d for d in _decisions_store.values()
@@ -125,7 +161,7 @@ async def get_alert_decisions(alert_id: str):
 
 
 @router.get("/operators/{operator_id}/stats", response_model=OperatorStats)
-async def get_operator_stats(operator_id: str):
+async def get_operator_stats(operator_id: str, operator: dict = Depends(get_current_operator)):
     """Retorna estatísticas de desempenho do operador."""
     if operator_id not in _operator_stats:
         return OperatorStats(
@@ -156,8 +192,11 @@ async def websocket_queue(websocket: WebSocket):
     WebSocket para fila de alertas pendentes de revisão.
 
     Dashboard conecta para receber alertas que precisam de revisão HITL.
+    Requer ``?token=<JWT>``.
     """
     await websocket.accept()
+    if await authenticate_websocket(websocket) is None:
+        return
 
     from src.cloud.api.routes.alerts import _alerts_store
 
@@ -184,7 +223,7 @@ async def websocket_queue(websocket: WebSocket):
 
 
 @router.get("/dashboard/summary")
-async def get_dashboard_summary():
+async def get_dashboard_summary(operator: dict = Depends(get_current_operator)):
     """Retorna resumo do dashboard HITL."""
     from src.cloud.api.routes.alerts import _alerts_store
 
