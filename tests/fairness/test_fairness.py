@@ -92,14 +92,18 @@ class TestBiasDetector(unittest.TestCase):
     def test_check_bias_insufficient_samples(self):
         """Testa verificação com amostras insuficientes."""
         # Registra poucas amostras
-        for _ in range(5):
+        # Mínimo = window_size // 10 = 5. Com 4 amostras: None.
+        # (A asserção antiga "assertIsNone(...) or assertIn(...)" nunca chegava ao
+        # segundo ramo: assertIsNone lança exceção quando o resultado não é None.)
+        for _ in range(4):
             self.detector.record(1, 1, "A")
+        self.assertIsNone(self.detector.check_bias())
 
+        # Com 5 amostras há relatório com a contagem analisada
+        self.detector.record(1, 1, "A")
         result = self.detector.check_bias()
-
-        # Retorna None se amostras insuficientes
-        # ou resultado com warning
-        self.assertIsNone(result) or self.assertIn("samples_analyzed", result)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["samples_analyzed"], 5)
 
 
 if __name__ == "__main__":

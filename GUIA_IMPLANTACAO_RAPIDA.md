@@ -97,7 +97,7 @@ http://localhost:8000/health   # Health check
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/auth/token \
-  -d "username=admin" -d "password=admin123"
+  -d "username=admin" -d "password=<SUA_SENHA>"
 ```
 
 ### Criar Alerta (Requer Autenticação)

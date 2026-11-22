@@ -1,10 +1,13 @@
 """API Middleware - Autenticação, logging e CORS."""
 
-from fastapi import Request, HTTPException, status
+from fastapi import Depends, Request, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import datetime, timedelta
 from typing import Optional
+import hashlib
+import hmac
+import json
 import jwt
 import logging
 import os
@@ -29,6 +32,56 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 8
 
 
+PBKDF2_ITERATIONS = 600_000
+
+
+def hash_password(password: str, iterations: int = PBKDF2_ITERATIONS) -> str:
+    """Gera hash ``pbkdf2_sha256$<iter>$<salt_hex>$<hash_hex>``."""
+    salt = secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+    return f"pbkdf2_sha256${iterations}${salt.hex()}${digest.hex()}"
+
+
+def verify_password(password: str, encoded: str) -> bool:
+    """Confere senha contra hash gerado por :func:`hash_password`."""
+    try:
+        algo, iterations, salt_hex, hash_hex = encoded.split("$")
+        if algo != "pbkdf2_sha256":
+            return False
+        digest = hashlib.pbkdf2_hmac(
+            "sha256", password.encode("utf-8"), bytes.fromhex(salt_hex), int(iterations)
+        )
+    except (ValueError, AttributeError):
+        return False
+    return hmac.compare_digest(digest.hex(), hash_hex)
+
+
+_DUMMY_HASH = "pbkdf2_sha256$1000$00$00"
+
+
+def _load_users_from_env() -> dict:
+    """Lê OPERATOR_USERS: {"usuario": {"role": "operator", "password_hash": "pbkdf2_sha256$..."}}."""
+    raw = os.environ.get("OPERATOR_USERS", "").strip()
+    if not raw:
+        logger.warning(
+            "OPERATOR_USERS não definido: nenhum operador pode autenticar. "
+            "Gere hashes com: python -m src.cloud.api.middleware.auth <senha>"
+        )
+        return {}
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.error("OPERATOR_USERS não é JSON válido; nenhum operador carregado")
+        return {}
+    users = {}
+    for name, info in data.items():
+        if isinstance(info, dict) and info.get("role") and info.get("password_hash"):
+            users[name] = {"role": info["role"], "password_hash": info["password_hash"]}
+        else:
+            logger.error(f"Entrada inválida em OPERATOR_USERS para '{name}' (ignorada)")
+    return users
+
+
 class OperatorAuth:
     """
     Autenticação de operadores HITL.
@@ -39,20 +92,22 @@ class OperatorAuth:
     - Banco de dados de usuários
     """
 
-    def __init__(self, secret: str = JWT_SECRET):
+    def __init__(self, secret: str = JWT_SECRET, users: Optional[dict] = None):
         self.secret = secret
 
-        # Usuários mock (em produção, usar banco de dados)
-        self._users = {
-            "admin": {"password": "admin123", "role": "admin"},
-            "operator1": {"password": "op123", "role": "operator"},
-            "supervisor": {"password": "sup123", "role": "supervisor"}
-        }
+        # SEGURANÇA (auditoria 2026-11-22): as senhas em texto puro que estavam
+        # versionadas aqui foram removidas. Usuários vêm da variável OPERATOR_USERS
+        # (JSON com hashes PBKDF2). Sem ela, nenhum login é aceito.
+        self._users = users if users is not None else _load_users_from_env()
 
     def authenticate(self, username: str, password: str) -> Optional[dict]:
-        """Verifica credenciais."""
+        """Verifica credenciais (comparação em tempo constante)."""
         user = self._users.get(username)
-        if user and user["password"] == password:
+        if not user or not isinstance(password, str):
+            # Executa um hash mesmo assim para não vazar existência do usuário por tempo
+            verify_password(password or "", _DUMMY_HASH)
+            return None
+        if verify_password(password, user.get("password_hash", "")):
             return {"username": username, "role": user["role"]}
         return None
 
@@ -85,7 +140,7 @@ class OperatorAuth:
 operator_auth = OperatorAuth()
 
 
-async def get_current_operator(token: str = oauth2_scheme) -> dict:
+async def get_current_operator(token: str = Depends(oauth2_scheme)) -> dict:
     """
     Dependency para rotas que requerem autenticação.
 
@@ -103,7 +158,7 @@ async def get_current_operator(token: str = oauth2_scheme) -> dict:
     return operator
 
 
-async def require_role(required_role: str):
+def require_role(required_role: str):
     """
     Dependency para rotas que requerem role específica.
 
@@ -122,5 +177,10 @@ async def require_role(required_role: str):
     return role_checker
 
 
-# Import necessário para o dependency
-from fastapi import Depends
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) != 2:
+        print("Uso: python -m src.cloud.api.middleware.auth <senha>")
+        raise SystemExit(2)
+    print(hash_password(sys.argv[1]))

@@ -59,8 +59,10 @@ SessionLocal = sessionmaker(
     bind=engine
 )
 
-# Base para modelos
-DatabaseBase = Incident.__class__.metadata
+# Base para modelos (antes: Incident.__class__.metadata -> AttributeError na importação)
+from .models.incident import Base  # noqa: E402
+
+DatabaseBase = Base.metadata
 
 
 def create_tables():

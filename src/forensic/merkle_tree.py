@@ -227,22 +227,8 @@ class MerkleTree:
         Returns:
             True se a prova é válida, False caso contrário
         """
-        current_hash = bytes.fromhex(proof.leaf_hash)
+        return verify_merkle_proof(proof, self.NODE_PREFIX)
 
-        for sibling_hash, position in proof.proof_path:
-            sibling = bytes.fromhex(sibling_hash)
-            if position == 'left':
-                # Sibling está à esquerda
-                current_hash = hashlib.sha256(
-                    self.NODE_PREFIX + sibling + current_hash
-                ).digest()
-            else:
-                # Sibling está à direita
-                current_hash = hashlib.sha256(
-                    self.NODE_PREFIX + current_hash + sibling
-                ).digest()
-
-        return current_hash.hex() == proof.root_hash
 
     def get_leaf_data(self, leaf_index: int) -> Optional[dict]:
         """Retorna dados originais de uma folha pelo índice."""
@@ -268,3 +254,25 @@ class MerkleTree:
             "leaf_hashes": self.leaf_hashes,
             "timestamp": datetime.now().isoformat()
         }
+
+
+def verify_merkle_proof(proof: "MerkleProof", node_prefix: Optional[bytes] = None) -> bool:
+    """Verifica uma prova de inclusão sem precisar da árvore.
+
+    Retorna False (em vez de lançar ValueError) para hashes malformados/adulterados.
+    """
+    if node_prefix is None:
+        node_prefix = MerkleTree.NODE_PREFIX
+    try:
+        current_hash = bytes.fromhex(proof.leaf_hash)
+        path = [(bytes.fromhex(h), pos) for h, pos in proof.proof_path]
+    except (ValueError, TypeError):
+        return False
+
+    for sibling, position in path:
+        if position == 'left':
+            current_hash = hashlib.sha256(node_prefix + sibling + current_hash).digest()
+        else:
+            current_hash = hashlib.sha256(node_prefix + current_hash + sibling).digest()
+
+    return current_hash.hex() == proof.root_hash

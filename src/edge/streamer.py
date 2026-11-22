@@ -90,7 +90,7 @@ class RTSPStreamer:
     # Codecs suportados
     CODEC_H264 = cv2.CAP_FFMPEG  # Via GStreamer/FFmpeg
     CODEC_H265 = cv2.CAP_FFMPEG
-    CODEC_MJPEG = cv2.CAP_MJPEG
+    CODEC_MJPEG = cv2.CAP_OPENCV_MJPEG  # cv2.CAP_MJPEG não existe no OpenCV
 
     def __init__(
         self,
