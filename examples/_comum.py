@@ -45,6 +45,11 @@ def executar(
     processor: Any | None = None,
 ) -> tuple[PipelineSummary, Path]:
     """Roda o pipeline real com log forense encadeado e (opcional) snapshots."""
+    if snapshots and processor is None:
+        # Snapshots nunca saem com rostos visíveis: borra com o detector Haar
+        from src.edge.processor import EdgeAIProcessor
+
+        processor = EdgeAIProcessor(backend="haar", device="CPU")
     pasta_forense = saida / "forense"
     logger = ForensicLogger(log_dir=str(pasta_forense), tsa_enabled=False, batch_size=50)
     pipeline = VideoPipeline(camera_id, analyzers=analisadores, processor=processor, forensic_logger=logger)

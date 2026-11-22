@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import json
+import logging
 import os
 import secrets
 import sys
@@ -20,7 +21,13 @@ from pathlib import Path
 
 from cryptography.fernet import Fernet
 
-from src.cloud.api.middleware.auth import hash_password
+# Importar o módulo de auth dispara avisos de servidor (JWT/operadores ausentes)
+# que não se aplicam a esta ferramenta: silencia-os só durante o import.
+logging.disable(logging.WARNING)
+try:
+    from src.cloud.api.middleware.auth import hash_password
+finally:
+    logging.disable(logging.NOTSET)
 
 MIN_PASSWORD_LENGTH = 12
 VALID_ROLES = ("operator", "supervisor", "admin")
