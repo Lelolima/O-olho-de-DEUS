@@ -17,6 +17,7 @@ Uso:
         return items
 """
 
+import logging
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -26,18 +27,20 @@ from contextlib import contextmanager
 from .models.incident import Incident, Evidence, MerkleBatch
 from .models.hitl_decision import HitlDecision, OperatorSession
 
-# URL do banco de dados de variável de ambiente
-# Formato: postgresql://user:password@host:port/database
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/olho_de_deus"
-)
+logger = logging.getLogger(__name__)
 
-# Modo de fallback para SQLite (desenvolvimento/testes)
-USE_SQLITE = os.environ.get("USE_SQLITE", "false").lower() == "true"
+SQLITE_URL = "sqlite:///./olho_de_deus.db"
+
+# URL do banco: DATABASE_URL (ex.: postgresql://user:senha@host:5432/olho_de_deus).
+# Sem DATABASE_URL (ou com USE_SQLITE=true) usa SQLite local, para funcionar
+# após instalar do zero. Antes o padrão era um Postgres com usuário/senha fixos.
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+USE_SQLITE = os.environ.get("USE_SQLITE", "false").lower() == "true" or not DATABASE_URL
 
 if USE_SQLITE:
-    DATABASE_URL = "sqlite:///./olho_de_deus.db"
+    if not os.environ.get("DATABASE_URL"):
+        logger.info("DATABASE_URL não definido: usando SQLite local (%s)", SQLITE_URL)
+    DATABASE_URL = SQLITE_URL
     engine = create_engine(
         DATABASE_URL,
         connect_args={"check_same_thread": False},
@@ -68,13 +71,13 @@ DatabaseBase = Base.metadata
 def create_tables():
     """Cria todas as tabelas no banco de dados."""
     DatabaseBase.create_all(bind=engine)
-    print("✅ Tabelas criadas com sucesso")
+    logger.info("Tabelas criadas")
 
 
 def drop_tables():
     """Remove todas as tabelas (cuidado!)."""
     DatabaseBase.drop_all(bind=engine)
-    print("⚠️ Tabelas removidas")
+    logger.warning("Tabelas removidas")
 
 
 @contextmanager

@@ -28,9 +28,9 @@ def main():
     print("Criando tabelas...")
     try:
         create_tables()
-        print("✅ Tabelas criadas com sucesso!")
+        print("[OK] Tabelas criadas com sucesso!")
     except Exception as e:
-        print(f"❌ Erro ao criar tabelas: {e}")
+        print(f"[ERRO] Erro ao criar tabelas: {e}")
         print()
         print("Nota: Se estiver usando PostgreSQL, certifique-se de:")
         print("  1. Ter o PostgreSQL instalado e rodando")
@@ -46,9 +46,9 @@ def main():
         from sqlalchemy import text
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        print("✅ Conexão verificada!")
+        print("[OK] Conexão verificada!")
     except Exception as e:
-        print(f"⚠️ Erro na conexão: {e}")
+        print(f"[AVISO] Erro na conexão: {e}")
 
     print()
     print("=" * 50)
