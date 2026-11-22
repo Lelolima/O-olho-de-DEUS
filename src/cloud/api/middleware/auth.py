@@ -28,8 +28,7 @@ if JWT_SECRET and len(JWT_SECRET) < MIN_JWT_SECRET_LENGTH:
 if not JWT_SECRET:
     JWT_SECRET = secrets.token_hex(32)  # 256-bit
     logger.warning(
-        "JWT_SECRET não definido. "
-        "Um segredo temporário foi gerado. Para produção, defina JWT_SECRET no .env"
+        "JWT_SECRET não definido. Um segredo temporário foi gerado. Para produção, defina JWT_SECRET no .env"
     )
 
 JWT_ALGORITHM = "HS256"
