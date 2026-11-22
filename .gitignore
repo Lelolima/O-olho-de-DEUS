@@ -55,3 +55,6 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+# Gerados em execução
+*.db
+forensic_logs/
