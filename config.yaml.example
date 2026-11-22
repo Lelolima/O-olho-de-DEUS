@@ -11,28 +11,28 @@ edge:
   thresholds:
     confidence: 0.5
     iou: 0.45
+  face_detection: true      # detecção facial + blur na borda (sem identificação)
+  face_event_min_faces: 1   # gera evento quando houver >= N rostos (0 desliga)
 
-# Câmeras RTSP
+# Câmeras: rtsp://, http(s)://, índice de webcam ("0") ou arquivo de vídeo.
+# Credenciais na URL podem vir do ambiente: rtsp://${CAM_USER:}:${CAM_PASS:}@host/...
 cameras:
   - id: "CAM-001"
-    url: "rtsp://192.168.1.100:554/stream1"
+    url: "${CAM_001_URL:rtsp://192.168.1.100:554/stream1}"
     location: "Entrada Principal"
-  - id: "CAM-002"
-    url: "rtsp://192.168.1.100:554/stream2"
-    location: "Corredor A"
   # Adicione mais câmeras conforme necessário
 
 # Configurações Forensic Logging
 forensic:
   log_dir: "./forensic_logs"
-  tsa_enabled: true
-  tsa_url: "https://freetsa.org/tsr"  # TSA gratuita
+  tsa_enabled: false                  # true = carimbo RFC 3161 via rede (TSA gratuita abaixo)
+  tsa_url: "https://freetsa.org/tsr"
   batch_size: 100  # Evidence por batch Merkle
   archive_dir: "./forensic_logs/archives"
 
 # Configurações API (Cloud/HITL)
 api:
-  host: "0.0.0.0"
+  host: "127.0.0.1"   # use 0.0.0.0 apenas atrás de proxy/firewall
   port: 8000
   cors_origins:
     - "http://localhost:3000"  # Dashboard frontend
@@ -64,6 +64,6 @@ fairness:
 # Logging
 logging:
   level: "INFO"  # DEBUG, INFO, WARNING, ERROR
-  file: "olho_de_deus.log"
+  file: null  # ex.: "olho_de_deus.log"
   max_size_mb: 100
   backup_count: 5

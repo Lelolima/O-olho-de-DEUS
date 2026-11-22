@@ -118,6 +118,13 @@ class RTSPStreamer:
         self.max_reconnect_delay = max_reconnect_delay
         self.frame_timeout = frame_timeout
 
+        from src.edge.sources import redact_url
+
+        self._safe_url = redact_url(str(rtsp_url))
+        self._source = rtsp_url
+        self._is_file = False
+        self.finished = threading.Event()  # setado ao fim de um arquivo de vídeo
+
         # Validação inicial
         if validate_url:
             self._validate_url()
@@ -142,43 +149,27 @@ class RTSPStreamer:
         self._reconnect_lock = threading.Lock()
 
     def _validate_url(self):
-        """Valida formato da URL RTSP/HTTP."""
-        valid_prefixes = [
-            "rtsp://",
-            "rtsp://",
-            "http://",
-            "https://",
-            "file://",
-            "/dev/video",  # Webcams Linux
-            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"  # Webcams Windows (índice)
-        ]
+        """Valida a fonte (webcam, arquivo, rtsp/http). Lança ``ValueError`` se inválida."""
+        from src.edge.sources import STREAM_SCHEMES, parse_source
 
-        is_valid = any(
-            self.rtsp_url.startswith(prefix)
-            for prefix in valid_prefixes
-        )
+        self._source = parse_source(self.rtsp_url)
+        self._is_file = isinstance(self._source, str) and not self._source.startswith(
+            tuple(f"{sch}://" for sch in STREAM_SCHEMES)
+        ) and not self._source.startswith("/dev/video")
 
-        if not is_valid:
-            raise ValueError(
-                f"URL RTSP inválida: {self.rtsp_url}\n"
-                f"Deve começar com rtsp://, http://, https://, ou índice de webcam"
-            )
-
-        # Verifica se não é IP privado exceto localhost
-        if "://" in self.rtsp_url:
-            from urllib.parse import urlparse
+        # Aviso (não bloqueio): câmeras costumam ficar em rede privada
+        if isinstance(self._source, str) and "://" in self._source:
             import ipaddress
+            from urllib.parse import urlparse
 
-            parsed = urlparse(self.rtsp_url)
-            hostname = parsed.hostname
-
+            hostname = urlparse(self._source).hostname
             if hostname:
                 try:
                     ip = ipaddress.ip_address(hostname)
                     if ip.is_private and not ip.is_loopback:
-                        logger.warning(f"URL aponta para IP privado: {hostname}")
+                        logger.info(f"Fonte em IP privado: {hostname}")
                 except ValueError:
-                    pass  # Hostname não é IP, ok
+                    pass  # hostname, não IP
 
     def start(self):
         """Inicia thread de leitura do stream."""
@@ -186,7 +177,7 @@ class RTSPStreamer:
             logger.warning("Streamer já está rodando")
             return
 
-        logger.info(f"Iniciando streamer para {self.rtsp_url}")
+        logger.info(f"Iniciando streamer para {self._safe_url}")
 
         self._stop_event.clear()
         self._thread = threading.Thread(target=self._reader_loop, daemon=True)
@@ -194,11 +185,11 @@ class RTSPStreamer:
 
         # Aguarda primeira conexão
         if not self._connected.wait(timeout=self.frame_timeout):
-            logger.error(f"Timeout na conexão inicial: {self.rtsp_url}")
+            logger.error(f"Timeout na conexão inicial: {self._safe_url}")
 
     def stop(self):
         """Para thread e libera recursos."""
-        logger.info(f"Parando streamer: {self.rtsp_url}")
+        logger.info(f"Parando streamer: {self._safe_url}")
 
         self._stop_event.set()
         self._connected.clear()
@@ -274,6 +265,11 @@ class RTSPStreamer:
                     ret, frame = self._cap.read()
 
                     if not ret:
+                        if self._is_file:
+                            logger.info(f"Fim do arquivo de vídeo: {self._safe_url}")
+                            self.finished.set()
+                            self._stop_event.set()
+                            break
                         logger.warning("Falha ao ler frame, reconectando...")
                         self.stats.frames_dropped += 1
                         break
@@ -302,43 +298,15 @@ class RTSPStreamer:
                 current_delay = min(current_delay * 2, self.max_reconnect_delay)
 
     def _connect(self):
-        """Estabelece conexão com stream RTSP."""
-        logger.info(f"Conectando a {self.rtsp_url}...")
+        """Abre a fonte via :func:`src.edge.sources.open_capture`."""
+        from src.edge.sources import open_capture
 
-        # GStreamer options para baixa latência
-        gstreamer_options = [
-            "latency=100",           # 100ms buffer
-            "buffer-size=512",       # 512KB buffer
-            "drop-on-latency=true",  # Drop frames se latência alta
-            "max-bitrate=0",         # Sem limite de bitrate
-        ]
-
-        # Constroi GStreamer pipeline
-        if self.rtsp_url.startswith("rtsp://"):
-            gst_pipeline = (
-                f"gstrtspsrc location={self.rtsp_url} "
-                f"{' '.join(gstreamer_options)} ! "
-                f"rtph264depay ! avdec_h264 ! "
-                f"videoconvert ! appsink"
-            )
-            self._cap = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
-        else:
-            # HTTP stream ou webcam
-            self._cap = cv2.VideoCapture(self.rtsp_url)
-
-        # Configurações adicionais
-        if self._cap:
-            # Buffer settings
-            self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
-
-            # Timeout (alguns backends suportam)
-            self._cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, int(self.frame_timeout * 1000))
-
-        # Verifica se abriu
-        if not self._cap or not self._cap.isOpened():
-            raise ConnectionError(f"Falha ao abrir stream: {self.rtsp_url}")
-
-        logger.info(f"Conectado a {self.rtsp_url}")
+        logger.info(f"Conectando a {self._safe_url}...")
+        try:
+            self._cap = open_capture(self._source, open_timeout_s=self.frame_timeout)
+        except ValueError as exc:
+            raise ConnectionError(str(exc)) from exc
+        logger.info(f"Conectado a {self._safe_url}")
         self._connected.set()
 
     def __enter__(self):
@@ -387,7 +355,7 @@ class MultiStreamManager:
             return False
 
         self._streamers[camera_id] = RTSPStreamer(rtsp_url)
-        logger.info(f"Stream {camera_id} adicionado: {rtsp_url}")
+        logger.info(f"Stream {camera_id} adicionado: {self._streamers[camera_id]._safe_url}")
         return True
 
     def remove_stream(self, camera_id: str):

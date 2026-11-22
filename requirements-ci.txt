@@ -6,6 +6,7 @@ scikit-learn==1.9.1
 cryptography==50.0.2
 PyJWT==2.15.1
 requests==2.34.2
+PyYAML==6.0.4
 aiohttp==3.14.5
 fastapi==0.165.0
 uvicorn==0.54.0
