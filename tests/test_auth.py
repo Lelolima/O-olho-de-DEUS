@@ -79,6 +79,18 @@ class TestApiAuth(unittest.TestCase):
         r = self.client.get("/health")
         self.assertEqual(r.status_code, 200)
 
+    def test_login_without_configured_users_is_503_with_clear_message(self):
+        from src.cloud.api.middleware import auth as auth_mod
+
+        saved = auth_mod.operator_auth._users
+        auth_mod.operator_auth._users = {}
+        try:
+            r = self.client.post("/api/v1/auth/token", data={"username": "op", "password": "pw"})
+        finally:
+            auth_mod.operator_auth._users = saved
+        self.assertEqual(r.status_code, 503)
+        self.assertIn("OPERATOR_USERS", r.json()["detail"])
+
     def test_login_wrong_password(self):
         r = self.client.post("/api/v1/auth/token", data={"username": "op", "password": "x"})
         self.assertEqual(r.status_code, 401)

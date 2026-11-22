@@ -129,7 +129,7 @@ async def upload_evidence(
 
 
 @router.get("/{evidence_id}/chain", response_model=EvidenceChain)
-async def get_evidence_chain(evidence_id: str, db: Session = Depends(get_db)):
+async def get_evidence_chain(evidence_id: str, operator: dict = Depends(get_current_operator), db: Session = Depends(get_db)):
     """
     Retorna cadeia de custódia completa de evidência.
 
@@ -177,7 +177,7 @@ async def get_evidence_chain(evidence_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{evidence_id}/verify", response_model=dict)
-async def verify_evidence(evidence_id: str, db: Session = Depends(get_db)):
+async def verify_evidence(evidence_id: str, operator: dict = Depends(get_current_operator), db: Session = Depends(get_db)):
     """
     Verifica integridade de evidência.
 
@@ -261,7 +261,7 @@ async def verify_evidence(evidence_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/batch/{batch_id}")
-async def get_batch_info(batch_id: str):
+async def get_batch_info(batch_id: str, operator: dict = Depends(get_current_operator)):
     """
     Retorna informações de batch Merkle.
 

@@ -7,7 +7,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 import uuid
 
-from src.cloud.api.middleware.auth import get_current_operator
+from src.cloud.api.middleware.auth import authenticate_websocket, get_current_operator
 from src.cloud.database import get_db, IncidentRepository
 from sqlalchemy.orm import Session
 
@@ -152,6 +152,7 @@ async def create_alert(
 
 @router.get("/", response_model=List[AlertResponse])
 async def list_alerts(
+    _operator: dict = Depends(get_current_operator),
     status: Optional[str] = None,
     camera_id: Optional[str] = None,
     limit: int = 100,
@@ -199,7 +200,7 @@ async def list_alerts(
 
 
 @router.get("/{alert_id}", response_model=AlertResponse)
-async def get_alert(alert_id: str, db: Session = Depends(get_db)):
+async def get_alert(alert_id: str, operator: dict = Depends(get_current_operator), db: Session = Depends(get_db)):
     """Obtém detalhes de um alerta específico."""
     global _db_available
 
@@ -311,7 +312,8 @@ async def review_alert(
 
     # Metadados da revisão
     alert_data["reviewed_at"] = datetime.now()
-    alert_data["operator_id"] = review.operator_id or operator["username"]
+    # Sempre o operador autenticado (o campo operator_id do corpo é ignorado)
+    alert_data["operator_id"] = operator["username"]
     alert_data["review_decision"] = review.decision
     alert_data["review_justification"] = review.justification
 
@@ -324,9 +326,11 @@ async def websocket_alerts(websocket: WebSocket):
     WebSocket para push de alertas em tempo real.
 
     Dashboard HITL conecta neste endpoint para receber
-    alertas assim que são criados.
+    alertas assim que são criados. Requer ``?token=<JWT>``.
     """
     await websocket.accept()
+    if await authenticate_websocket(websocket) is None:
+        return
 
     # Envia alertas pendentes existentes
     pending = [

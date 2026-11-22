@@ -1,16 +1,18 @@
 """Dashboard Server - Aplicação FastAPI para o sistema."""
 
+import logging
+import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
 
-# Configura logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
 logger = logging.getLogger(__name__)
+
+
+def _cors_origins() -> list[str]:
+    raw = os.environ.get("CORS_ORIGINS", "http://localhost:3000")
+    return [o.strip() for o in raw.split(",") if o.strip()]
 
 
 @asynccontextmanager
@@ -41,9 +43,17 @@ async def lifespan(app: FastAPI):
     from src.cloud.services.fairness_service import fairness_service
 
     app.state.forensic_logger = ForensicLogger(
-        log_dir="./forensic_logs",
-        tsa_enabled=True
+        log_dir=os.environ.get("EVIDENCE_DIR", "./forensic_logs"),
+        tsa_enabled=os.environ.get("TSA_ENABLED", "false").lower() == "true",
+        tsa_url=os.environ.get("TSA_URL") or None,
     )
+    from src.cloud.api.middleware.auth import operator_auth
+
+    if not operator_auth.has_users():
+        logger.warning(
+            "Nenhum operador configurado: defina OPERATOR_USERS (veja .env.example). "
+            "O login responderá 503 até lá."
+        )
     app.state.fairness_service = fairness_service
     app.state.db_available = db_available
 
@@ -70,10 +80,11 @@ def create_app() -> FastAPI:
     )
 
     # CORS middleware
+    origins = _cors_origins()
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Em produção, especificar origens permitidas
-        allow_credentials=True,
+        allow_origins=origins,  # CORS_ORIGINS (vírgulas); "*" desliga credenciais
+        allow_credentials="*" not in origins,
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -101,6 +112,11 @@ def create_app() -> FastAPI:
     @app.post("/api/v1/auth/token")
     async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         """Obtém token JWT de operador."""
+        if not operator_auth.has_users():
+            raise HTTPException(
+                status_code=503,
+                detail="Nenhum operador configurado no servidor. Defina OPERATOR_USERS (veja .env.example).",
+            )
         operator = operator_auth.authenticate(form_data.username, form_data.password)
         if not operator:
             raise HTTPException(status_code=401, detail="Credenciais inválidas")
@@ -161,4 +177,4 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=os.environ.get("API_HOST", "127.0.0.1"), port=int(os.environ.get("API_PORT", "8000")))
